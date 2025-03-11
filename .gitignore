@@ -1,0 +1,13 @@
+# For folders
+node_modules/
+citizen-gateway/
+
+
+
+
+
+# For files
+*.log
+*.env*
+models/index.js
+config/sequalizer.config.json
