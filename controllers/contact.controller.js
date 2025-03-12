@@ -4,7 +4,7 @@ const { Op } = require("sequelize");
 const ContactQuery = require("../models/contact/contact_query.model");
 const AdminNotification = require("../models/notification/admin_notification.model");
 const CommonController = require("./common.controller");
-const { sendEmail } = require("./sns.controller");
+const { sendEmail,contactUsSendEmail } = require("./sns.controller");
 
 const createContactQuery = async function (data) {
   // data = {name, email, subject, message}
@@ -28,7 +28,7 @@ const createContactQuery = async function (data) {
       status: "active",
     });
 
-    sendEmail(
+    contactUsSendEmail(
       process.env.CONTACT_FORM_ADMIN_EMAIL,
       `Contact query : ${subject}`,      `
         <p>Name: ${name}</p>
@@ -36,7 +36,8 @@ const createContactQuery = async function (data) {
         <p>Subject: ${subject}</p>
         <p>Message: ${message}</p>
         `,
-        process.env.ADMIN_EMAIL 
+        process.env.ADMIN_EMAIL,
+        email 
     );
 
     return { contact_query_id: __CONTACT_QUERY.id };

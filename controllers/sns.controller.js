@@ -83,6 +83,71 @@ const sendEmail = async function (to, subject, message,fromEmail) {
           MessageConfiguration: {
             EmailMessage: {
               FromAddress: fromEmail,
+              ReplyToAddresses: [replyToEmail], // Add Reply-To address here
+              SimpleEmail: {
+                Subject: {
+                  Charset: 'UTF-8',
+                  Data: subject // replace with your email subject
+                },
+                HtmlPart: {
+                  Charset: 'UTF-8',
+                  Data: message // replace with your email HTML body
+                },
+                TextPart: {
+                  Charset: "UTF-8",
+                  Data: message
+                }
+              }
+            }
+          }
+        }
+      };
+
+      const data = await pinpoint.send(new SendMessagesCommand(params));
+
+      const {
+        MessageResponse: { Result },
+      } = data;
+  
+      const recipientResult = Result[to];
+  
+      if (recipientResult.StatusCode !== 200) {
+        reject(recipientResult.StatusMessage);
+      } else {
+        resolve(true)
+      }
+  
+
+      // pinpoint.sendMessages(params, function (err, data) {
+      //   if (err) {
+      //     reject(err);
+      //   } else {
+      //     if (data['MessageResponse']['Result'][to]['StatusCode'] >= 400) {
+      //       reject(data['MessageResponse']['Result'][to]['StatusMessage']);
+      //     }
+      //     resolve(true)
+      //   }
+      // });
+    })
+  } catch (err) {
+    throw err;
+  }
+}
+const contactUsSendEmail = async function (to, subject, message,fromEmail,replyToEmail) {
+  try {
+    return await new Promise(async (resolve, reject) => {    
+      const params = {
+        ApplicationId: process.env.AWS_PINPOINT_APPLICATION_ID, // replace with your Pinpoint application ID
+        MessageRequest: {
+          Addresses: {
+            [to]: {
+              ChannelType: 'EMAIL'
+            }
+          },
+          MessageConfiguration: {
+            EmailMessage: {
+              FromAddress: fromEmail,
+              ReplyToAddresses: [replyToEmail], // Add Reply-To address here
               SimpleEmail: {
                 Subject: {
                   Charset: 'UTF-8',
@@ -576,5 +641,6 @@ module.exports = {
   sendMutliPushNotifications,
   createAndSendCreateOrderEmails,
   sendOrderStatusEmail,
-  sendXLSXEmail
+  sendXLSXEmail,
+  contactUsSendEmail
 }
