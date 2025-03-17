@@ -250,7 +250,7 @@ const verifyOTP = async function (data) {
     }
 
     const currentEnv = process.env.NODE_ENV || "local";
-    const allowedEnvironments = ["staging", "local"];
+    const allowedEnvironments = ["staging", "local", "prod", "live"];
 
     if (
       (allowedEnvironments.includes(currentEnv) &&
