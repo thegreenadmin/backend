@@ -4,7 +4,9 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
-
+  environment:
+    NODE_ENV: ${opt:stage, 'prod'}
+    DATABASE_URL: ${env:DB_URL}
 functions:
   app:
     handler: index.handler
@@ -12,3 +14,5 @@ functions:
       - http:
           path: /{proxy+}
           method: ANY
+plugins:
+  - serverless-dotenv-plugin

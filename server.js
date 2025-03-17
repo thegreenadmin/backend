@@ -7,7 +7,7 @@ require('custom-env').env(true)
 require('./database/db.connect').connect().then();
 const CroneController = require('./controllers/crone.controller');
 const moment = require('moment');
-
+const serverless = require('serverless-http');
 
 const corsOptions = {
   origin: ['http://localhost:4200', 'http://localhost:3520', 'http://localhost:3519'],
@@ -28,7 +28,7 @@ app.set('view engine', 'ejs');
 
 
 
-require('./routes/_index')(app);
+//require('./routes/_index')(app);
 
 
 
