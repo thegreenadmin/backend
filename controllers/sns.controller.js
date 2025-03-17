@@ -135,6 +135,7 @@ const sendEmail = async function (to, subject, message,fromEmail) {
 }
 const contactUsSendEmail = async function (to, subject, message,fromEmail,replyToEmail) {
   try {
+    console.log("to===",to)
     return await new Promise(async (resolve, reject) => {    
       const params = {
         ApplicationId: process.env.AWS_PINPOINT_APPLICATION_ID, // replace with your Pinpoint application ID
