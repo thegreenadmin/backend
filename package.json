@@ -28,6 +28,7 @@
     "cors": "^2.8.5",
     "country-state-city": "^3.1.4",
     "countrycitystatejson": "^21.2.2301",
+    "cross-env": "^7.0.3",
     "custom-env": "^2.0.1",
     "ejs": "^3.1.9",
     "exceljs": "^4.3.0",
