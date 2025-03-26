@@ -108,7 +108,7 @@ app.get('*', function(req,res) {
 
 
 
-app.listen(process.env.ENV_PORT || 8081, () => {
+app.listen(process.env.ENV_PORT || 8080, () => {
   console.log("process.env.NODE_ENV: ",process.env.NODE_ENV)
-  console.log("Server running on ", process.env.ENV_PORT || 8081);
+  console.log("Server running on ", process.env.ENV_PORT || 8080);
 });
