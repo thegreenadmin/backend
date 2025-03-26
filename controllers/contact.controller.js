@@ -30,7 +30,7 @@ const createContactQuery = async function (data) {
 
     try {
       await contactUsSendEmail(
-        process.env.CONTACT_FORM_ADMIN_EMAIL,
+        process.env.CONTACT_FORM_ADMIN_EMAIL, // support@thegreenmall.atlassian.net
         `Contact query : ${subject}`,
         `
         <p>Name: ${name}</p>
@@ -38,7 +38,7 @@ const createContactQuery = async function (data) {
         <p>Subject: ${subject}</p>
         <p>Message: ${message}</p>
         `,
-        process.env.SNS_FROM_EMAIL,
+        process.env.SNS_FROM_EMAIL, // admin@thegreenmall.net
         // process.env.ADMIN_EMAIL,
         email
       );
