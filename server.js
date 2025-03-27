@@ -9,7 +9,8 @@ const CroneController = require('./controllers/crone.controller');
 const moment = require('moment');
 
 const corsOptions = {
-  origin: ['http://localhost:4200', 'http://localhost:3520', 'http://localhost:3519'],
+  origin: '*', // Restrict to allowed origins in production
+  //origin: ['http://localhost:4200', 'http://localhost:3520', 'http://localhost:3519'],
   optionsSuccessStatus: 200 // For legacy browser support
 }
 
