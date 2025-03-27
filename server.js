@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 
 app.get("/", (req, res) => {
-  res.send("Hello from AWS Beanstalk!");
+  res.send("Hello from AWS Beanstalk updatedS!");
 });
 
 const PORT = process.env.PORT || 8080;
