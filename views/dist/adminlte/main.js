@@ -5407,8 +5407,8 @@ __webpack_require__.r(__webpack_exports__);
 const environment = {
   production: false,
   // BASE_PATH: "http://54.190.192.105:3520",
-  BASE_PATH: "http://18.224.191.88:3520"
-  //BASE_PATH: "http://localhost:8081",
+  //BASE_PATH: "http://18.224.191.88:3520",
+  BASE_PATH: "http://localhost:8080"
 };
 /*
  * For easier debugging in development mode, you can import the following file

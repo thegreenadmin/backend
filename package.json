@@ -12,7 +12,7 @@
     "local:ubu:staging": "kill -9 $(lsof -t -i:3520); NODE_ENV=staging nodemon server.js",
     "staging:win:dev": "SET NODE_ENV=local& nodemon server.js",
     "staging:ubu:dev": "NODE_ENV=staging node server.js",
-    "prod:unu": "cross-env NODE_ENV=prod nodemon server.js",
+    "prod:unu": "npx cross-env NODE_ENV=prod nodemon server.js",
     "prod:live": "kill -9 $(lsof -t -i:3520);NODE_ENV=live nodemon server.js"
   },
   "dependencies": {
