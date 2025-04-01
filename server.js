@@ -8,13 +8,18 @@ require('./database/db.connect').connect().then();
 const CroneController = require('./controllers/crone.controller');
 const moment = require('moment');
 
-const corsOptions = {
-  //origin: '*', // Restrict to allowed origins in production
-  origin: ['http://localhost:4200', 'https://cn3m3t9wyd.execute-api.us-east-1.amazonaws.com', 'https://rr56zdj710.execute-api.us-east-1.amazonaws.com'],
-  optionsSuccessStatus: 200 // For legacy browser support
-}
-
+// const corsOptions = {
+//   //origin: '*', // Restrict to allowed origins in production
+//   origin: ['http://localhost:4200', 'https://cn3m3t9wyd.execute-api.us-east-1.amazonaws.com', 'https://rr56zdj710.execute-api.us-east-1.amazonaws.com'],
+//   optionsSuccessStatus: 200 // For legacy browser support
+// }
 let app = express();
+// Allow all origins (Not recommended for production)
+app.use(cors());
+
+
+
+
 console.log("check code updated")
 app.use((req, res, next) => { 
   res.header('Access-Control-Allow-Origin', '*');
