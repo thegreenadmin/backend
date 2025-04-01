@@ -23,8 +23,16 @@ app.use((req, res, next) => {
   req.request_time = moment().utc().toDate();next(); 
 });
 app.use(cors(corsOptions));
-app.use(express.static('views/dist/adminlte/'));
+// app.use(express.static('views/dist/adminlte/'));
+// app.set('view engine', 'ejs');
 app.set('view engine', 'ejs');
+// Serve static files from the Angular build directory
+app.use(express.static(path.join(__dirname, 'views', 'dist', 'adminlte')));
+
+// Catch-all route to handle Angular routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'dist', 'adminlte', 'index.html'));
+});
 
 
 
