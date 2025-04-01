@@ -185,7 +185,7 @@ const contactUsSendEmail = async function (
       };
 
       const data = await pinpoint.send(new SendMessagesCommand(params));
-
+      console.log("email==",data)
       const {
         MessageResponse: { Result },
       } = data;
