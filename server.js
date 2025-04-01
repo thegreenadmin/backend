@@ -9,8 +9,8 @@ const CroneController = require('./controllers/crone.controller');
 const moment = require('moment');
 
 const corsOptions = {
-  origin: '*', // Restrict to allowed origins in production
-  //origin: ['http://localhost:4200', 'http://localhost:3520', 'http://localhost:3519'],
+  //origin: '*', // Restrict to allowed origins in production
+  origin: ['http://localhost:4200', 'https://cn3m3t9wyd.execute-api.us-east-1.amazonaws.com', 'https://rr56zdj710.execute-api.us-east-1.amazonaws.com'],
   optionsSuccessStatus: 200 // For legacy browser support
 }
 
@@ -23,6 +23,7 @@ app.use((req, res, next) => {
   req.request_time = moment().utc().toDate();next(); 
 });
 app.use(cors(corsOptions));
+//app.use(cors());  // Allow all origins
 // app.use(express.static('views/dist/adminlte/'));
 // app.set('view engine', 'ejs');
 app.set('view engine', 'ejs');
