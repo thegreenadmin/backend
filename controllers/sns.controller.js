@@ -340,7 +340,7 @@ const sendStoreUserEmail = async function (
       process.env.ADMIN_EMAIL
     );
   } catch (err) {
-    throw err;
+    // throw err;
   }
 };
 
@@ -359,6 +359,7 @@ const createAndSendCreateOrderEmails = async function (
       sendEmail(email, title, orderTemplate, process.env.NO_REPLY_EMAIL);
     });
   } catch (err) {
+    console.error("Just A Warning", err);
     // logger.log(err);
   }
 };
@@ -380,6 +381,8 @@ const sendOrderStatusEmail = async function (
       );
     });
   } catch (err) {
+    console.error("Just A Warning", err);
+
     // logger.log(err);
   }
 };
