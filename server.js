@@ -8,23 +8,37 @@ require('./database/db.connect').connect().then();
 const CroneController = require('./controllers/crone.controller');
 const moment = require('moment');
 
-const corsOptions = {
-  origin: '*', // Restrict to allowed origins in production
-  //origin: ['http://localhost:4200', 'http://localhost:3520', 'http://localhost:3519'],
-  optionsSuccessStatus: 200 // For legacy browser support
-}
-
+// const corsOptions = {
+//   //origin: '*', // Restrict to allowed origins in production
+//   origin: ['http://localhost:4200', 'https://cn3m3t9wyd.execute-api.us-east-1.amazonaws.com', 'https://rr56zdj710.execute-api.us-east-1.amazonaws.com'],
+//   optionsSuccessStatus: 200 // For legacy browser support
+// }
 let app = express();
-console.log("check code updated")
+// Allow all origins (Not recommended for production)
+app.use(cors());
+
+
+
+
+console.log("code uploaded today")
 app.use((req, res, next) => { 
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   req.request_time = moment().utc().toDate();next(); 
 });
-app.use(cors(corsOptions));
-app.use(express.static('views/dist/adminlte/'));
+//app.use(cors(corsOptions));
+//app.use(cors());  // Allow all origins
+// app.use(express.static('views/dist/adminlte/'));
+// app.set('view engine', 'ejs');
 app.set('view engine', 'ejs');
+// Serve static files from the Angular build directory
+app.use(express.static(path.join(__dirname, 'views', 'dist', 'adminlte')));
+
+// Catch-all route to handle Angular routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'dist', 'adminlte', 'index.html'));
+});
 
 
 
