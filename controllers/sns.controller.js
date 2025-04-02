@@ -61,7 +61,7 @@ const sendSMSMessage = async function (phone, phoneCode, message) {
       resolve(true);
     });
   } catch (err) {
-    throw err;
+    // throw err;
   }
 };
 
@@ -140,7 +140,8 @@ const sendEmail = async function (
       // });
     });
   } catch (err) {
-    throw err;
+    console.log(err, "....sendEmail");
+    // throw err;
   }
 };
 
@@ -210,7 +211,8 @@ const contactUsSendEmail = async function (
       // });
     });
   } catch (err) {
-    throw err;
+    console.log(err, "...contactUsSendEmail");
+    // throw err;
   }
 };
 
@@ -318,7 +320,8 @@ const sendXLSXEmail = async function (
       // });
     });
   } catch (err) {
-    throw err;
+    console.log(err, "Error In sendXlsxEmail");
+    // throw err;
   }
 };
 
@@ -525,7 +528,7 @@ const sendMultipleFCMPushNotification = async function (
     }
   } catch (err) {
     console.error("Error sending FCM notifications:", err.message);
-    throw err;
+    // throw err;
   }
 };
 
