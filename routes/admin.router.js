@@ -130,12 +130,10 @@ router.post("/login", async function (req, res) {
 
 router.get("/details", adminAuth, async function (req, res) {
   const admin_id = req.payload.admin.id;
-  try {
-    console.log("gherteeer")
+  try {    
     const admin = await getAdminDetails(admin_id);
     sendOkResponse(res, admin, "Admin details successfully fetched");
-  } catch (err) {
-    console.log("error",err)
+  } catch (err) {    
     sendConflictResponse(res, {}, err);
   }
 });

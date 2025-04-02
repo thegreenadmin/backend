@@ -359,7 +359,7 @@ const createAndSendCreateOrderEmails = async function (
       : createOrderWithoutDeliveryDate_Template(order, title, message);
   try {
     emails.forEach((email) => {
-      sendEmail(email, title, orderTemplate, process.env.NO_REPLY_EMAIL);
+      sendEmail(email, title, orderTemplate, process.env.SNS_FROM_EMAIL);
     });
   } catch (err) {
     console.error("Just A Warning", err);
@@ -380,7 +380,7 @@ const sendOrderStatusEmail = async function (
         email,
         title,
         orderStatus_Template(order, order_items, title, message),
-        process.env.NO_REPLY_EMAIL
+        process.env.SNS_FROM_EMAIL
       );
     });
   } catch (err) {
