@@ -40,7 +40,6 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "dist", "adminlte", "index.html"));
 });
 
-
 // crones
 cron.schedule("*/1 * * * *", async function () {
   try {
