@@ -32,7 +32,8 @@ async function connect() {
     await syncTables();
     await createData();
   } catch (error) {
-    // logger.err('Unable to connect to the database:', error);
+    console.log("Unable to connect to the databasez.",error);
+     logger.err('Unable to connect to the database:', error);
   }
 }
 
