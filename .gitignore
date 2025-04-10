@@ -9,7 +9,6 @@ citizen-gateway/
 # For files
 *.log
 *.env.live
-*.env.staging
 *.env
 models/index.js
 config/sequalizer.config.json
