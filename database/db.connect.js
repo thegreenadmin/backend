@@ -4,19 +4,18 @@ const { Sequelize } = require("sequelize");
 const logger = require("./../logger/logger");
 
 const sequelize = new Sequelize(
-  process.env.DB_URL + "?timezone=+00:00",
-  process.env.NODE_ENV != "staging"
-    ? {
+  process.env.DB_URL + "?timezone=+00:00", 
+     {
         dialect: "postgres",
         dialectOptions: {
           ssl: {
-            require: false,
+            require: true,
             rejectUnauthorized: false,
           },
         },
         logging: false,
       }
-    : { logging: false}
+    
 ); // Example for postgres
 
 global["sequelize"] = sequelize;
