@@ -160,7 +160,9 @@ const replyContactQuery = async function (data) {
     sendEmail(
       __CONTACT_QUERY.email,
       `Contact query: ${__CONTACT_QUERY.subject}`,
-      reply
+      reply,
+      process.env.SNS_FROM_EMAIL,
+      process.env.NO_REPLY_EMAIL
     );
 
     return {

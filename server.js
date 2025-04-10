@@ -1,44 +1,51 @@
-const path = require('path');
+const path = require("path");
 const express = require("express");
-const cors = require('cors');
-var cron = require('node-cron');
+const cors = require("cors");
+var cron = require("node-cron");
 // const logger = require('./logger/logger');
-require('custom-env').env(true)
-require('./database/db.connect').connect().then();
-const CroneController = require('./controllers/crone.controller');
-const moment = require('moment');
+require("custom-env").env(true);
+require("./database/db.connect").connect().then();
+const CroneController = require("./controllers/crone.controller");
+const moment = require("moment");
 
-const corsOptions = {
-  origin: '*', // Restrict to allowed origins in production
-  //origin: ['http://localhost:4200', 'http://localhost:3520', 'http://localhost:3519'],
-  optionsSuccessStatus: 200 // For legacy browser support
-}
-
+// const corsOptions = {
+//   //origin: '*', // Restrict to allowed origins in production
+//   origin: ['http://localhost:4200', 'https://cn3m3t9wyd.execute-api.us-east-1.amazonaws.com', 'https://rr56zdj710.execute-api.us-east-1.amazonaws.com'],
+//   optionsSuccessStatus: 200 // For legacy browser support
+// }
 let app = express();
-console.log("check code updated")
-app.use((req, res, next) => { 
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  req.request_time = moment().utc().toDate();next(); 
+// Allow all origins (Not recommended for production)
+app.use(cors());
+
+console.log("code uploaded today");
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  req.request_time = moment().utc().toDate();
+  next();
 });
-app.use(cors(corsOptions));
-app.use(express.static('views/dist/adminlte/'));
-app.set('view engine', 'ejs');
+//app.use(cors(corsOptions));
+//app.use(cors());  // Allow all origins
+// app.use(express.static('views/dist/adminlte/'));
+// app.set('view engine', 'ejs');
+app.set("view engine", "ejs");
+// Serve static files from the Angular build directory
+app.use(express.static(path.join(__dirname, "views", "dist", "adminlte")));
 
+require("./routes/_index")(app);
 
-
-require('./routes/_index')(app);
-
-
-
+// Catch-all route to handle Angular routing
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "dist", "adminlte", "index.html"));
+});
 
 // crones
-cron.schedule("*/1 * * * *", async function() {
-  try{
+cron.schedule("*/1 * * * *", async function () {
+  try {
     await CroneController.orderHistoryNotificationController();
-  }catch(err) {
-     logger.err(err);
+  } catch (err) {
+    logger.err(err);
   }
 });
 // Array of times in EST
@@ -49,7 +56,7 @@ const timesInEST = [
   { hours: 12, minutes: 0 },
   { hours: 16, minutes: 0 },
   { hours: 20, minutes: 0 },
-  { hours: 0, minutes: 0 }
+  { hours: 0, minutes: 0 },
 ];
 // Function to create a cron schedule for a given time in EST
 const scheduleCronInEST = ({ hours, minutes }) => {
@@ -74,42 +81,31 @@ timesInEST.forEach(scheduleCronInEST);
 
 //========End code to run cron every (4 AM, 8 AM, 12PM, 4 PM, 8 PM,12 AM EST)============.
 
-
-cron.schedule("0 */2 * * *", async function() {
-  try{
+cron.schedule("0 */2 * * *", async function () {
+  try {
     // logger.log("CroneController.reversePayouts");
     await CroneController.payoutsManageController();
-  }catch(err) {
+  } catch (err) {
     // logger.err(err);
   }
-})
+});
 
-
-
-cron.schedule("0 */6 * * *", async function() {
-  try{
+cron.schedule("0 */6 * * *", async function () {
+  try {
     // logger.log("CroneController.deleteOldUserSessionsController");
     await CroneController.deleteOldUserSessionsController();
-  }catch(err) {
+  } catch (err) {
     // logger.err(err);
   }
-})
+});
 
-
-
-
-
-app.get('*', function(req,res) {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Expires', 'Sat, 01 Jan 2000 00:00:00 GMT');
+app.get("*", function (req, res) {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Expires", "Sat, 01 Jan 2000 00:00:00 GMT");
   res.render(path.resolve(`views/dist/adminlte/`));
 });
 
-
-
-
-
 app.listen(process.env.ENV_PORT || 8080, () => {
-  console.log("process.env.NODE_ENV: ",process.env.NODE_ENV)
+  console.log("process.env.NODE_ENV: ", process.env.NODE_ENV);
   console.log("Server running on ", process.env.ENV_PORT || 8080);
 });

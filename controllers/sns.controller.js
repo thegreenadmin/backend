@@ -61,7 +61,7 @@ const sendSMSMessage = async function (phone, phoneCode, message) {
       resolve(true);
     });
   } catch (err) {
-    throw err;
+    // throw err;
   }
 };
 
@@ -140,7 +140,8 @@ const sendEmail = async function (
       // });
     });
   } catch (err) {
-    throw err;
+    console.log(err, "....sendEmail");
+    // throw err;
   }
 };
 
@@ -210,7 +211,8 @@ const contactUsSendEmail = async function (
       // });
     });
   } catch (err) {
-    throw err;
+    console.log(err, "...contactUsSendEmail");
+    // throw err;
   }
 };
 
@@ -318,7 +320,8 @@ const sendXLSXEmail = async function (
       // });
     });
   } catch (err) {
-    throw err;
+    console.log(err, "Error In sendXlsxEmail");
+    // throw err;
   }
 };
 
@@ -340,7 +343,7 @@ const sendStoreUserEmail = async function (
       process.env.ADMIN_EMAIL
     );
   } catch (err) {
-    throw err;
+    // throw err;
   }
 };
 
@@ -356,9 +359,10 @@ const createAndSendCreateOrderEmails = async function (
       : createOrderWithoutDeliveryDate_Template(order, title, message);
   try {
     emails.forEach((email) => {
-      sendEmail(email, title, orderTemplate, process.env.NO_REPLY_EMAIL);
+      sendEmail(email, title, orderTemplate, process.env.SNS_FROM_EMAIL);
     });
   } catch (err) {
+    console.error("Just A Warning", err);
     // logger.log(err);
   }
 };
@@ -376,10 +380,12 @@ const sendOrderStatusEmail = async function (
         email,
         title,
         orderStatus_Template(order, order_items, title, message),
-        process.env.NO_REPLY_EMAIL
+        process.env.SNS_FROM_EMAIL
       );
     });
   } catch (err) {
+    console.error("Just A Warning", err);
+
     // logger.log(err);
   }
 };
@@ -522,7 +528,7 @@ const sendMultipleFCMPushNotification = async function (
     }
   } catch (err) {
     console.error("Error sending FCM notifications:", err.message);
-    throw err;
+    // throw err;
   }
 };
 

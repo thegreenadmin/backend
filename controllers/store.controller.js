@@ -2248,6 +2248,7 @@ const shop_StoreDetails = async function (data, user_id = null) {
     }
     return __STORE;
   } catch (err) {
+    console.log("Catched Error: ", err);
     throw err;
   }
 };
@@ -2746,7 +2747,7 @@ const admin_acceptClaimRequest = async function (data) {
         __STORE.store_name +
         "'",
       cliamStore_Template(__STORE.store_name, "Accepted"),
-      process.env.NO_REPLY_EMAIL
+      process.env.SNS_FROM_EMAIL
     );
 
     await __SQL_TRANSACTION.commit();
@@ -2789,7 +2790,7 @@ const admin_rejectClaimRequest = async function (data) {
         __STORE.store_name +
         "'",
       cliamStore_Template(__STORE.store_name, "Rejected"),
-      process.env.NO_REPLY_EMAIL
+      process.env.SNS_FROM_EMAIL
     );
 
     return { is_rejetcted: true };
