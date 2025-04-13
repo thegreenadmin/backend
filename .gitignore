@@ -9,6 +9,7 @@ citizen-gateway/
 # For files
 *.log
 *.env.live
+*.env.prod
 *.env.staging
 *.env
 models/index.js
