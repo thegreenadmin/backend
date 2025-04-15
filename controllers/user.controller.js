@@ -45,6 +45,7 @@ const createUser = async function (data) {
       phone_code,
       dob,
       has_store_access,
+      is_store_owner,
     } = data;
     const status = "active";
     let user = null;
@@ -67,11 +68,12 @@ const createUser = async function (data) {
             has_store_access,
             is_account_deleted: false,
             user_balance: 0,
+            is_store_owner,
           },
           { transaction: __SQL_TRANSACTION }
         );
       } else {
-        if (__USER.has_store_access) {
+        if (__USER.has_store_access || __USER.is_store_owner) {
           throw "Store owner already exists, please login to continue";
         }
 
@@ -105,6 +107,7 @@ const createUser = async function (data) {
           has_store_access,
           is_account_deleted: false,
           user_balance: 0,
+          is_store_owner: false,
         },
         { transaction: __SQL_TRANSACTION }
       );
@@ -235,6 +238,7 @@ const verifyOTP = async function (data) {
       throw MESSAGES.USER_NOT_FOUND;
     }
     let has_store_access = user.has_store_access;
+    let is_store_owner = user.is_store_owner;
     const __OTP__ = await UserOTP.findOne({
       where: {
         user_id: user.id,
@@ -362,14 +366,20 @@ const verifyOTP = async function (data) {
       { transaction: __SQL_TRANSACTION }
     );
 
-    let isUserStoreOwner =
-      $user && $user.is_store_owner ? $user.is_store_owner : false;
+    const isUserStoreOwner = () => {
+      if ($user?.is_store_owner) return $user.is_store_owner;
+      else if (has_store_access && is_store_owner === true)
+        return is_store_owner;
+      else return false;
+    };
+
+    // let isUserStoreOwner =
+    //   $user && $user.is_store_owner ? $user.is_store_owner : false;
 
     // commit the changes
     await __SQL_TRANSACTION.commit();
-    return { token, has_store_access, is_store_owner: isUserStoreOwner };
+    return { token, has_store_access, is_store_owner: isUserStoreOwner() };
   } catch (err) {
-    console.log(err, ".....................");
     await __SQL_TRANSACTION.rollback();
     throw err;
   }
