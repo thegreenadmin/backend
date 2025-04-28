@@ -29,19 +29,16 @@ const createContactQuery = async function (data) {
     });
 
     try {
-      await contactUsSendEmail(
-        'sukhdevsmartdata@gmail.com',
-        //process.env.CONTACT_FORM_DMIN_EMAIL, // support@thegreenmall.atlassian.net
-        `Contact query : ${subject}`,
-        `
+      await contactUsSendEmail(        
+        process.env.DATA_EMAIL, // In To=> data@thegreenmall.net
+        `Contact query : ${subject}`,        `
         <p>Name: ${name}</p>
         <p>Email: ${email}</p>
         <p>Subject: ${subject}</p>
         <p>Message: ${message}</p>
         `,
-        process.env.SNS_FROM_EMAIL, // admin@thegreenmall.net
-        // process.env.ADMIN_EMAIL,
-        email
+        process.env.GREENMALL_ADMIN_EMAIL, // In From=>  admin@thegreenmall.net        
+        email //In ReplyTo 
       );
     } catch (error) {}
 
@@ -158,10 +155,10 @@ const replyContactQuery = async function (data) {
     );
 
     sendEmail(
-      __CONTACT_QUERY.email,
+      __CONTACT_QUERY.email, //In To 
       `Contact query: ${__CONTACT_QUERY.subject}`,
       reply,
-      process.env.SNS_FROM_EMAIL,
+      process.env.GREENMALL_ADMIN_EMAIL, //In From admin@thegreenmall.net
       process.env.NO_REPLY_EMAIL
     );
 

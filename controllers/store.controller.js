@@ -2744,7 +2744,7 @@ const admin_acceptClaimRequest = async function (data) {
         __STORE.store_name +
         "'",
       cliamStore_Template(__STORE.store_name, "Accepted"),
-      process.env.SNS_FROM_EMAIL
+      process.env.GREENMALL_ADMIN_EMAIL //In From admin@thegreenmall.net
     );
 
     await __SQL_TRANSACTION.commit();
@@ -2787,7 +2787,7 @@ const admin_rejectClaimRequest = async function (data) {
         __STORE.store_name +
         "'",
       cliamStore_Template(__STORE.store_name, "Rejected"),
-      process.env.SNS_FROM_EMAIL
+      process.env.GREENMALL_ADMIN_EMAIL //In From admin@thegreenmall.net
     );
 
     return { is_rejetcted: true };
