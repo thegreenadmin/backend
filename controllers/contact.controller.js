@@ -30,14 +30,14 @@ const createContactQuery = async function (data) {
 
     try {
       await contactUsSendEmail(        
-        process.env.DATA_EMAIL, // In To=> data@thegreenmall.net
+        process.env.CONTACT_US_FORM_TO, // In To=> support@thegreenmall.atlassian.net
         `Contact query : ${subject}`,        `
         <p>Name: ${name}</p>
         <p>Email: ${email}</p>
         <p>Subject: ${subject}</p>
         <p>Message: ${message}</p>
         `,
-        process.env.GREENMALL_ADMIN_EMAIL, // In From=>  admin@thegreenmall.net        
+        process.env.DATA_EMAIL, // In From=>  data@thegreenmall.net        
         email //In ReplyTo 
       );
     } catch (error) {}
@@ -158,7 +158,7 @@ const replyContactQuery = async function (data) {
       __CONTACT_QUERY.email, //In To 
       `Contact query: ${__CONTACT_QUERY.subject}`,
       reply,
-      process.env.GREENMALL_ADMIN_EMAIL, //In From admin@thegreenmall.net
+      process.env.DATA_EMAIL, //In From data@thegreenmall.net
       process.env.NO_REPLY_EMAIL
     );
 

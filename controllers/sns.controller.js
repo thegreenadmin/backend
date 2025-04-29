@@ -276,7 +276,7 @@ const sendXLSXEmail = async function (
   try {
     return await new Promise(async (resolve, reject) => {
       const params = {
-        Source: "HiDigital <" + process.env.GREENMALL_ADMIN_EMAIL + ">", // Replace with the sender's email address
+        Source: "HiDigital <" + process.env.DATA_EMAIL + ">", // Replace with the sender's email address
         Destination: {
           ToAddresses: [to], // Replace with the recipient's email address
         },
@@ -359,7 +359,7 @@ const createAndSendCreateOrderEmails = async function (
       : createOrderWithoutDeliveryDate_Template(order, title, message);
   try {
     emails.forEach((email) => {
-      sendEmail(email, title, orderTemplate, process.env.GREENMALL_ADMIN_EMAIL);
+      sendEmail(email, title, orderTemplate, process.env.DATA_EMAIL);
     });
   } catch (err) {
     console.error("Just A Warning", err);
@@ -380,7 +380,7 @@ const sendOrderStatusEmail = async function (
         email,
         title,
         orderStatus_Template(order, order_items, title, message),
-        process.env.GREENMALL_ADMIN_EMAIL //In From admin@thegreenmall.net
+        process.env.DATA_EMAIL //In From admin@thegreenmall.net
       );
     });
   } catch (err) {
