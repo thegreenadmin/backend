@@ -1841,8 +1841,6 @@ const shop_getNearbyStores = async function (data, user_id) {
       place_id,
     } = data;
 
-    // console.log(data);
-
     const postelCodeFromFrontend = postal_code;
 
     if (place_id) {
@@ -1860,15 +1858,6 @@ const shop_getNearbyStores = async function (data, user_id) {
       }
     }
 
-    // if (postal_code ) {
-    //   const geoParameters = await USPSController.getGeoParametersByPostalCode(
-    //     postal_code
-    //   );
-    //   if (geoParameters.result) {
-    //     latitude = geoParameters.latitude;
-    //     longitude = geoParameters.longitude;
-    //   }
-    // }
     if (postelCodeFromFrontend) {
       postal_code = postelCodeFromFrontend;
       const geoParameters = await USPSController.getGeoParametersByPostalCode(
@@ -2197,6 +2186,9 @@ const shop_getNearbyStores = async function (data, user_id) {
 
     return { total_count: __STORE__ADDRESSES?.total_count, store_addresses };
   } catch (err) {
+    if (err.message === 'column "distance" does not exist') {
+      throw MESSAGES.LOCATION_ACCESS_NOT_GRANTED;
+    }
     throw err;
   }
 };
