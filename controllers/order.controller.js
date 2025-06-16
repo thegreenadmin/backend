@@ -1978,10 +1978,13 @@ const deliverOrder = async function (data) {
         const __USER = await User.findOne({ where: { id: __ORDER.user_id } });
         const __STORE_EMAILS =
           await CommonController.getStoreMangeOrderUserEmails(store_id);
+
+        const uniqueEmails = new Set([__USER.email, ...__STORE_EMAILS]);
+
         SNSController.sendOrderStatusEmail(
           __ORDER,
           __NOTIFICATION_ITEMS,
-          [__USER.email, ...__STORE_EMAILS],
+          uniqueEmails,
           `Order Completion Notification`,
           `We are thrilled to inform you that your order has been successfully completed! We would like to express our sincerest gratitude for choosing 'The Green Mall 420' for your purchase. We hope that our service meet your expectations.
                     `
