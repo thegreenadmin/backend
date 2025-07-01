@@ -194,6 +194,8 @@ const listStoreCartItems = async function (data, user_id) {
 
       const __STORE_OFFER = __OFFERS.find((offer) => offer.is_offer_for_store);
 
+      console.log(__STORE_OFFER, "...............Store Offer");
+
       if (__STORE_OFFER) {
         offers.push(__STORE_OFFER);
         offer = __STORE_OFFER;
@@ -250,7 +252,11 @@ const listStoreCartItems = async function (data, user_id) {
       delete product.product_images;
       delete cartItem.product;
 
-      cartItem.total_discount = itemDiscountOffset * cartItem.items_count;
+      if (offer?.is_offer_for_store) {
+        cartItem.total_discount = itemDiscountOffset;
+      } else {
+        cartItem.total_discount = itemDiscountOffset * cartItem.items_count;
+      }
       cartItem.total_price = cartItem.offer_price * cartItem.items_count;
 
       cartItem.offer = offer;
