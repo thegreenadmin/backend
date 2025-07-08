@@ -196,9 +196,6 @@ const createOrder = async function (data, user_id) {
         }
       }
 
-      console.log(product, "...........product");
-      console.log(offer, "...........offer");
-
       if (offer) {
         offerPrice = CommonController.getCalculatedPrice(
           product.selling_price,
