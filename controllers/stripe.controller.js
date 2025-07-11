@@ -790,8 +790,7 @@ const getUserStripeConnectedAccount = async function (user_id) {
         business_type: "individual",
         capabilities: {
           transfers: { requested: true },
-        },
-        locale: "en", // ✅ Supported locales like 'en', 'fr', 'de', etc.
+        }        
       });
 
       await stripe.accounts.update(stripeConnectedAccount.id, {
