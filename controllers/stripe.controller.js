@@ -820,7 +820,7 @@ const getUserStripeConnectedAccount = async function (user_id) {
       refresh_url: `${process.env.ENV_DOMAIN}/stripe?messageType=refresh`,
       return_url: `${process.env.ENV_DOMAIN}/stripe?messageType=return`,
       type: "account_onboarding",
-      locale: "en", // ✅ Supported locales like 'en', 'fr', 'de', etc.
+     //locale: "en", // ✅ Supported locales like 'en', 'fr', 'de', etc.
     });
 
     return {
