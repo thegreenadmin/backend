@@ -665,10 +665,11 @@ const sendMessageAndCreateNotification = async function (
 
       const __NOTIFICATION = await Notification.create(
         {
-          user_id: sender_type == "user" ? msgHead.user_id : storeOwner.id,
+          // user_id: sender_type == "user" ? msgHead.user_id : storeOwner.id,
+          user_id: sender_type !== "user" ? msgHead.user_id : storeOwner.id,
           store_id: msgHead.store_id,
           message_head_id,
-          is_notification_for_store: sender_type !== "user" ? false : true,
+          is_notification_for_store: sender_type === "user",
           is_sent: true,
           is_read: false,
           title,
@@ -708,7 +709,7 @@ const userSendMessage = async function (data, user_id) {
     const { message_head_id, message, image_url } = data;
 
     const __MESSAGE_HEAD = await MessageHead.findOne({
-      where: { id: message_head_id, user_id },
+      where: { id: message_head_id },
     });
 
     if (!__MESSAGE_HEAD) {
