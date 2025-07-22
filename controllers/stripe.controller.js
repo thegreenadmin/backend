@@ -351,8 +351,13 @@ const userWalletRechargeWithCard = async function (
             }
           );
 
+          const amt = parseFloat(amount);
+          const total =
+            (isNaN(__USER_BALANCE) ? 0 : __USER_BALANCE) +
+            (isNaN(amt) ? 0 : amt);
+
           await User.update(
-            { user_balance: __USER_BALANCE + parseFloat(amount) },
+            { user_balance: total },
             { where: { id: user_id } }
           );
         }
@@ -790,7 +795,7 @@ const getUserStripeConnectedAccount = async function (user_id) {
         business_type: "individual",
         capabilities: {
           transfers: { requested: true },
-        }        
+        },
       });
 
       await stripe.accounts.update(stripeConnectedAccount.id, {
@@ -820,7 +825,7 @@ const getUserStripeConnectedAccount = async function (user_id) {
       refresh_url: `${process.env.ENV_DOMAIN}/stripe?messageType=refresh`,
       return_url: `${process.env.ENV_DOMAIN}/stripe?messageType=return`,
       type: "account_onboarding",
-     //locale: "en", // ✅ Supported locales like 'en', 'fr', 'de', etc.
+      //locale: "en", // ✅ Supported locales like 'en', 'fr', 'de', etc.
     });
 
     return {
