@@ -217,11 +217,22 @@ const createOrder = async function (data, user_id) {
 
       subTotal - totalDiscount, (orderSubTotal += totalCharge);
 
+      console.log("Cart Debug Info:", {
+        cartItemsCount: cartItem?.items_count,
+        itemsCount: items_count,
+        offerPrice: offerPrice,
+        sellingPrice: product?.selling_price,
+        totalDiscount: totalDiscount,
+        subTotal: subTotal,
+        totalCharge: totalCharge,
+        offer: offer,
+      });
+
       return {
         product_id: product.id,
         order_item_count: cart_items.find(
           (ci) => ci.cart_item_id == cartItem.id
-        ).items_count,
+        )?.items_count,
         order_item_price: product.selling_price,
 
         discount_name: offer ? offer.offer_name : "",

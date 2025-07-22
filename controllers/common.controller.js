@@ -677,7 +677,8 @@ const getStripePaymentService = async function () {
 const getUserCurrentBalance = async function (user_id) {
   try {
     const __USER = await User.findOne({ where: { id: user_id } });
-    return __USER.user_balance;
+
+    return isNaN(__USER.user_balance) ? 0 : __USER.user_balance;
   } catch (err) {
     throw err;
   }
