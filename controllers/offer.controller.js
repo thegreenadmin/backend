@@ -156,6 +156,7 @@ const listStoreOffers = async function (data, user_id) {
         "offer_name",
         "image_url",
         "offer_type",
+        "auto_created",
         "offer_value",
         "is_expired",
         "expiredAt",
