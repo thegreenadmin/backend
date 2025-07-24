@@ -1008,6 +1008,9 @@ const editProduct = async function (data) {
 
         await Offer.update(
           {
+            offer_type: product.discount_type,
+            offer_value: product.discount_value,
+
             offer_name: offerName,
             image_url: __PRODUCT_IMAGES.find(
               (pi) => pi.status == "active" && pi.order == 1

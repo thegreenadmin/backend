@@ -379,6 +379,11 @@ const storeWalletRechargeWithCard = async function (data, user_id) {
 
   try {
     const { user_stripe_card_id, store_id, amount } = data;
+
+    if (isNaN(Number(amount))) {
+      throw new Error("Invalid Amount");
+    }
+
     const __STRIPE_PAYMENT_SERVICE =
       await CommonController.getStripePaymentService();
 
