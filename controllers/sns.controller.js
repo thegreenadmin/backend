@@ -186,7 +186,7 @@ const contactUsSendEmail = async function (
       };
 
       const data = await pinpoint.send(new SendMessagesCommand(params));
-      console.log("email==",data)
+      console.log("email==", data);
       const {
         MessageResponse: { Result },
       } = data;
@@ -510,6 +510,10 @@ const sendMultipleFCMPushNotification = async function (
     if (tokens.length === 0) {
       throw new Error("No device tokens provided");
     }
+
+    const responses = [];
+    const errors = [];
+
     for (const token of tokens) {
       try {
         const response = await fbaseAdmin.messaging().send({
@@ -518,17 +522,24 @@ const sendMultipleFCMPushNotification = async function (
             title,
             body: message,
           },
-          data, // Ensure this is an object with string key-value pairs
+          data, // Ensure all values in 'data' are strings
         });
-        return response;
+        responses.push({ token, response });
       } catch (error) {
-        console.error("Error sending to token:", token, error);
-        throw error;
+        console.error("Error sending to token:", token, error.message);
+        errors.push({ token, error });
+
+        // Optional: Handle unregistered tokens
+        if (error.code === "messaging/registration-token-not-registered") {
+          // Mark token as invalid in DB or remove it
+        }
       }
     }
+
+    return { success: responses, failed: errors };
   } catch (err) {
-    console.error("Error sending FCM notifications:", err.message);
-    // throw err;
+    console.error("Error in sending multiple FCM notifications:", err.message);
+    throw err;
   }
 };
 
