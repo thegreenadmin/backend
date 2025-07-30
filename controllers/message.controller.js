@@ -655,10 +655,12 @@ const sendMessageAndCreateNotification = async function (
             false,
             "message"
           );
+
         if (__IS_PUSH_NOTIFICATION_AVAILABLE) {
           const userTokens = await CommonController.getUserTokens(
             msgHead.user_id
           );
+
           tokens = [...userTokens];
         }
       }

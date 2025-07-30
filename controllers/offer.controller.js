@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const moment = require("moment");
 const sequelize = global["sequelize"];
 
@@ -789,6 +789,15 @@ const shop_listHomeOffers = async function (data) {
             },
           ],
         },
+        {
+          model: OfferProduct,
+          where: {
+            status: "active",
+          },
+          required: false,
+          attributes: ["product_id"],
+          order: ["updatedAt", "DESC"],
+        },
       ],
     };
 
@@ -805,9 +814,11 @@ const shop_listHomeOffers = async function (data) {
       const offer = o.toJSON();
       const offerImage = S3Controller.getAwsS3SignedFileUrl(offer.image_url);
       const offer_id = offer.id;
+      const product_id = offer?.offer_products?.[0]?.product_id ?? null;
       delete offer.image_url;
       delete offer.id;
-      return Object.assign({ image: offerImage, offer_id }, offer);
+      delete offer?.offer_products;
+      return Object.assign({ image: offerImage, offer_id, product_id }, offer);
     });
 
     return { total_count: __OFFERS.total_count, offers };
