@@ -1863,9 +1863,12 @@ const shop_getNearbyStores = async function (data, user_id) {
       const geoParameters = await USPSController.getGeoParametersByPostalCode(
         postal_code
       );
+
       if (geoParameters.result) {
         latitude = geoParameters.latitude;
         longitude = geoParameters.longitude;
+      } else {
+        throw MESSAGES.ASSOCIATED_LOCATION_NOT_FOUND;
       }
     }
 
