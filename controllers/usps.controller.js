@@ -193,6 +193,7 @@ const getGeoParametersByPostalCode = async function (postalCode) {
 
   const response = await axios.get(url);
   const data = response.data;
+
   if (data.status === "OK") {
     const result = data.results;
     const location = result[0].geometry.location;

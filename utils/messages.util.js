@@ -78,7 +78,8 @@ module.exports = {
   STORE_USER_DELETED_SUCCESSFULLY: "User deleted successfully",
   STORE_USER_NOT_DELETED: "Store owner can not be removed",
   LOCATION_ACCESS_NOT_GRANTED: "Please provide the Location access",
-
+  ASSOCIATED_LOCATION_NOT_FOUND:
+    "No location is associated with this postal code.",
   STORE_USER_ROLE_CREATED_SUCCESSFULLY: "Role for store created successfully",
   STORE_USER_ROLE_NOT_FOUND: "Role does not exists",
   STORE_USER_ROLE_DELETED_SUCCESSFULLY: "Role successfully removed",
