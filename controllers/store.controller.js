@@ -1841,23 +1841,7 @@ const shop_getNearbyStores = async function (data, user_id) {
       place_id,
     } = data;
 
-    console.log({
-      q,
-      page,
-      page_size,
-      longitude,
-      latitude,
-      postal_code,
-      mileage,
-      is_open_now,
-      opening_time,
-      closing_time,
-      delivery_services,
-      city,
-      state,
-      country,
-      place_id,
-    });
+    const postelCodeFromFrontend = postal_code;
 
     if (place_id) {
       const geoParameters = await USPSController.getGeoParametersByPlaceId(
@@ -1874,13 +1858,17 @@ const shop_getNearbyStores = async function (data, user_id) {
       }
     }
 
-    if (postal_code) {
+    if (postelCodeFromFrontend) {
+      postal_code = postelCodeFromFrontend;
       const geoParameters = await USPSController.getGeoParametersByPostalCode(
         postal_code
       );
+
       if (geoParameters.result) {
         latitude = geoParameters.latitude;
         longitude = geoParameters.longitude;
+      } else {
+        throw MESSAGES.ASSOCIATED_LOCATION_NOT_FOUND;
       }
     }
 
@@ -2140,14 +2128,15 @@ const shop_getNearbyStores = async function (data, user_id) {
       page,
       page_size,
       order: [
-        [sequelize.col(latitude == 0 ? "address_name" : "distance"), "ASC"],
-        [
-          sequelize.col(
-            distanceWhere.length == 0 ? "address_name" : "distance"
-          ),
-          "ASC",
-        ],
-        //[sequelize.col("store_address_id"), "ASC"]
+        // [sequelize.col(latitude == 0 ? "address_name" : "distance"), "ASC"],
+        // [
+        //   sequelize.col(
+        //     distanceWhere.length == 0 ? "address_name" : "distance"
+        //   ),
+        //   "ASC",
+        // ],
+        [sequelize.col("distance"), "ASC"],
+        // [sequelize.col("distance"), "DESC"],
       ],
       as: "data",
     });
@@ -2196,10 +2185,13 @@ const shop_getNearbyStores = async function (data, user_id) {
       return store_address;
     });
 
-    console.log(store_addresses);
+    // console.log(store_addresses?.map((data) => data?.distance));
 
     return { total_count: __STORE__ADDRESSES?.total_count, store_addresses };
   } catch (err) {
+    if (err.message === 'column "distance" does not exist') {
+      throw MESSAGES.LOCATION_ACCESS_NOT_GRANTED;
+    }
     throw err;
   }
 };
@@ -2747,7 +2739,7 @@ const admin_acceptClaimRequest = async function (data) {
         __STORE.store_name +
         "'",
       cliamStore_Template(__STORE.store_name, "Accepted"),
-      process.env.SNS_FROM_EMAIL
+      process.env.DATA_EMAIL //In From data@thegreenmall.net
     );
 
     await __SQL_TRANSACTION.commit();
@@ -2790,7 +2782,7 @@ const admin_rejectClaimRequest = async function (data) {
         __STORE.store_name +
         "'",
       cliamStore_Template(__STORE.store_name, "Rejected"),
-      process.env.SNS_FROM_EMAIL
+      process.env.DATA_EMAIL //In From data@thegreenmall.net
     );
 
     return { is_rejetcted: true };

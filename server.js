@@ -17,7 +17,6 @@ let app = express();
 // Allow all origins (Not recommended for production)
 app.use(cors());
 
-console.log("code uploaded today");
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
@@ -106,6 +105,6 @@ app.get("*", function (req, res) {
 });
 
 app.listen(process.env.ENV_PORT || 8080, () => {
-  console.log("process.env.NODE_ENV: ", process.env.NODE_ENV);
-  console.log("Server running on ", process.env.ENV_PORT || 8080);
+  console.log("Current ENV: ", process.env.NODE_ENV);
+  console.log("Server is running on PORT: ", process.env.ENV_PORT || 8080);
 });

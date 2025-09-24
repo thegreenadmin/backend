@@ -351,8 +351,13 @@ const userWalletRechargeWithCard = async function (
             }
           );
 
+          const amt = parseFloat(amount);
+          const total =
+            (isNaN(__USER_BALANCE) ? 0 : __USER_BALANCE) +
+            (isNaN(amt) ? 0 : amt);
+
           await User.update(
-            { user_balance: __USER_BALANCE + parseFloat(amount) },
+            { user_balance: total },
             { where: { id: user_id } }
           );
         }
@@ -374,6 +379,11 @@ const storeWalletRechargeWithCard = async function (data, user_id) {
 
   try {
     const { user_stripe_card_id, store_id, amount } = data;
+
+    if (isNaN(Number(amount))) {
+      throw new Error("Invalid Amount");
+    }
+
     const __STRIPE_PAYMENT_SERVICE =
       await CommonController.getStripePaymentService();
 
@@ -820,6 +830,7 @@ const getUserStripeConnectedAccount = async function (user_id) {
       refresh_url: `${process.env.ENV_DOMAIN}/stripe?messageType=refresh`,
       return_url: `${process.env.ENV_DOMAIN}/stripe?messageType=return`,
       type: "account_onboarding",
+      //locale: "en", // ✅ Supported locales like 'en', 'fr', 'de', etc.
     });
 
     return {

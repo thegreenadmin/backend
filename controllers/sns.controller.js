@@ -186,7 +186,7 @@ const contactUsSendEmail = async function (
       };
 
       const data = await pinpoint.send(new SendMessagesCommand(params));
-      console.log("email==",data)
+      console.log("email==", data);
       const {
         MessageResponse: { Result },
       } = data;
@@ -276,7 +276,7 @@ const sendXLSXEmail = async function (
   try {
     return await new Promise(async (resolve, reject) => {
       const params = {
-        Source: "HiDigital <" + process.env.SNS_FROM_EMAIL + ">", // Replace with the sender's email address
+        Source: "HiDigital <" + process.env.DATA_EMAIL + ">", // Replace with the sender's email address
         Destination: {
           ToAddresses: [to], // Replace with the recipient's email address
         },
@@ -359,7 +359,7 @@ const createAndSendCreateOrderEmails = async function (
       : createOrderWithoutDeliveryDate_Template(order, title, message);
   try {
     emails.forEach((email) => {
-      sendEmail(email, title, orderTemplate, process.env.SNS_FROM_EMAIL);
+      sendEmail(email, title, orderTemplate, process.env.DATA_EMAIL);
     });
   } catch (err) {
     console.error("Just A Warning", err);
@@ -380,7 +380,7 @@ const sendOrderStatusEmail = async function (
         email,
         title,
         orderStatus_Template(order, order_items, title, message),
-        process.env.SNS_FROM_EMAIL
+        process.env.DATA_EMAIL //In From admin@thegreenmall.net
       );
     });
   } catch (err) {
@@ -510,6 +510,10 @@ const sendMultipleFCMPushNotification = async function (
     if (tokens.length === 0) {
       throw new Error("No device tokens provided");
     }
+
+    const responses = [];
+    const errors = [];
+
     for (const token of tokens) {
       try {
         const response = await fbaseAdmin.messaging().send({
@@ -518,17 +522,24 @@ const sendMultipleFCMPushNotification = async function (
             title,
             body: message,
           },
-          data, // Ensure this is an object with string key-value pairs
+          data, // Ensure all values in 'data' are strings
         });
-        return response;
+        responses.push({ token, response });
       } catch (error) {
-        console.error("Error sending to token:", token, error);
-        throw error;
+        console.error("Error sending to token:", token, error.message);
+        errors.push({ token, error });
+
+        // Optional: Handle unregistered tokens
+        if (error.code === "messaging/registration-token-not-registered") {
+          // Mark token as invalid in DB or remove it
+        }
       }
     }
+
+    return { success: responses, failed: errors };
   } catch (err) {
-    console.error("Error sending FCM notifications:", err.message);
-    // throw err;
+    console.error("Error in sending multiple FCM notifications:", err.message);
+    throw err;
   }
 };
 

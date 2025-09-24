@@ -217,11 +217,22 @@ const createOrder = async function (data, user_id) {
 
       subTotal - totalDiscount, (orderSubTotal += totalCharge);
 
+      console.log("Cart Debug Info:", {
+        cartItemsCount: cartItem?.items_count,
+        itemsCount: items_count,
+        offerPrice: offerPrice,
+        sellingPrice: product?.selling_price,
+        totalDiscount: totalDiscount,
+        subTotal: subTotal,
+        totalCharge: totalCharge,
+        offer: offer,
+      });
+
       return {
         product_id: product.id,
         order_item_count: cart_items.find(
           (ci) => ci.cart_item_id == cartItem.id
-        ).items_count,
+        )?.items_count,
         order_item_price: product.selling_price,
 
         discount_name: offer ? offer.offer_name : "",
@@ -1978,10 +1989,13 @@ const deliverOrder = async function (data) {
         const __USER = await User.findOne({ where: { id: __ORDER.user_id } });
         const __STORE_EMAILS =
           await CommonController.getStoreMangeOrderUserEmails(store_id);
+
+        const uniqueEmails = new Set([__USER.email, ...__STORE_EMAILS]);
+
         SNSController.sendOrderStatusEmail(
           __ORDER,
           __NOTIFICATION_ITEMS,
-          [__USER.email, ...__STORE_EMAILS],
+          uniqueEmails,
           `Order Completion Notification`,
           `We are thrilled to inform you that your order has been successfully completed! We would like to express our sincerest gratitude for choosing 'The Green Mall 420' for your purchase. We hope that our service meet your expectations.
                     `
