@@ -234,14 +234,12 @@ const listStoreCartItems = async function (data, user_id) {
           offer.offer_type,
           offer.offer_value
         );
-        // console.log("itemDiscountOffset 1", itemDiscountOffset);
       } else {
         itemDiscountOffset = CommonController.getCalculateOffset(
           product.selling_price,
           product.discount_type,
           product.discount_value
         );
-        // console.log("itemDiscountOffset 2", itemDiscountOffset);
       }
 
       cartItem.offer_price = product.selling_price - itemDiscountOffset;
@@ -250,7 +248,11 @@ const listStoreCartItems = async function (data, user_id) {
       delete product.product_images;
       delete cartItem.product;
 
-      cartItem.total_discount = itemDiscountOffset * cartItem.items_count;
+      if (offer?.is_offer_for_store) {
+        cartItem.total_discount = itemDiscountOffset * cartItem.items_count;
+      } else {
+        cartItem.total_discount = itemDiscountOffset * cartItem.items_count;
+      }
       cartItem.total_price = cartItem.offer_price * cartItem.items_count;
 
       cartItem.offer = offer;
@@ -313,27 +315,13 @@ const listStoreCartItems = async function (data, user_id) {
       __TAX.tax_type,
       __TAX.tax_value
     );
-    // console.log("cart section start");
-    // console.log("totalTax==", totalTax);
-    // console.log(
-    //   "subTotal==",
-    //   subTotal,
-    //   "__DELIVERY_CHARGE=",
-    //   __DELIVERY_CHARGE,
-    //   "totalTax=",
-    //   totalTax,
-    //   "__ORDER_SERVICE_CHARGE.service_charge_type=",
-    //   __ORDER_SERVICE_CHARGE.service_charge_type,
-    //   "__ORDER_SERVICE_CHARGE.service_charge_value=",
-    //   __ORDER_SERVICE_CHARGE.service_charge_value
-    // );
+
     let totalServiceCharge = CommonController.getCalculateOffset(
       subTotal - totalDiscount + __DELIVERY_CHARGE + totalTax,
       __ORDER_SERVICE_CHARGE.service_charge_type,
       __ORDER_SERVICE_CHARGE.service_charge_value
     );
-    // console.log("totalServiceCharge==", totalServiceCharge);
-    // console.log("cart section end");
+
     const totalAmount =
       subTotal -
       totalDiscount +

@@ -337,7 +337,8 @@ const createStore = async function (data, user = null) {
 const getStoreDetails = async function (
   store_id,
   user_id = null,
-  is_admin_requested = null
+  is_admin_requested = null,
+  only_enabled_delivery_services = false
 ) {
   try {
     const favouriteStore = user_id
@@ -425,7 +426,20 @@ const getStoreDetails = async function (
         {
           model: StoreDeliveryService,
           required: false,
-          where: { status: "active" },
+          where: {
+            status: "active",
+            ...(only_enabled_delivery_services ? { is_enabled: true } : {}),
+          },
+          include: only_enabled_delivery_services
+            ? [
+                {
+                  model: DeliveryService,
+                  required: true,
+                  where: { status: "active", is_enabled: true },
+                  attributes: [],
+                },
+              ]
+            : [],
           attributes: [
             ["id", "store_delivery_service_id"],
             "delivery_service_id",
@@ -1841,23 +1855,7 @@ const shop_getNearbyStores = async function (data, user_id) {
       place_id,
     } = data;
 
-    console.log({
-      q,
-      page,
-      page_size,
-      longitude,
-      latitude,
-      postal_code,
-      mileage,
-      is_open_now,
-      opening_time,
-      closing_time,
-      delivery_services,
-      city,
-      state,
-      country,
-      place_id,
-    });
+    const postelCodeFromFrontend = postal_code;
 
     if (place_id) {
       const geoParameters = await USPSController.getGeoParametersByPlaceId(
@@ -1874,13 +1872,17 @@ const shop_getNearbyStores = async function (data, user_id) {
       }
     }
 
-    if (postal_code) {
+    if (postelCodeFromFrontend) {
+      postal_code = postelCodeFromFrontend;
       const geoParameters = await USPSController.getGeoParametersByPostalCode(
         postal_code
       );
+
       if (geoParameters.result) {
         latitude = geoParameters.latitude;
         longitude = geoParameters.longitude;
+      } else {
+        throw MESSAGES.ASSOCIATED_LOCATION_NOT_FOUND;
       }
     }
 
@@ -2140,14 +2142,15 @@ const shop_getNearbyStores = async function (data, user_id) {
       page,
       page_size,
       order: [
-        [sequelize.col(latitude == 0 ? "address_name" : "distance"), "ASC"],
-        [
-          sequelize.col(
-            distanceWhere.length == 0 ? "address_name" : "distance"
-          ),
-          "ASC",
-        ],
-        //[sequelize.col("store_address_id"), "ASC"]
+        // [sequelize.col(latitude == 0 ? "address_name" : "distance"), "ASC"],
+        // [
+        //   sequelize.col(
+        //     distanceWhere.length == 0 ? "address_name" : "distance"
+        //   ),
+        //   "ASC",
+        // ],
+        [sequelize.col("distance"), "ASC"],
+        // [sequelize.col("distance"), "DESC"],
       ],
       as: "data",
     });
@@ -2196,10 +2199,13 @@ const shop_getNearbyStores = async function (data, user_id) {
       return store_address;
     });
 
-    console.log(store_addresses);
+    // console.log(store_addresses?.map((data) => data?.distance));
 
     return { total_count: __STORE__ADDRESSES?.total_count, store_addresses };
   } catch (err) {
+    if (err.message === 'column "distance" does not exist') {
+      throw MESSAGES.LOCATION_ACCESS_NOT_GRANTED;
+    }
     throw err;
   }
 };
@@ -2208,7 +2214,7 @@ const shop_StoreDetails = async function (data, user_id = null) {
   // data = {store_id, longitude, latitude}
   try {
     const { store_id, longitude, latitude } = data;
-    const __STORE = await getStoreDetails(store_id, user_id);
+    const __STORE = await getStoreDetails(store_id, user_id, null, true);
     if (user_id && longitude && latitude) {
       const address = await USPSController.getAddressUsingLatLong(
         latitude,
@@ -2248,6 +2254,7 @@ const shop_StoreDetails = async function (data, user_id = null) {
     }
     return __STORE;
   } catch (err) {
+    console.log("Catched Error: ", err);
     throw err;
   }
 };
@@ -2746,7 +2753,7 @@ const admin_acceptClaimRequest = async function (data) {
         __STORE.store_name +
         "'",
       cliamStore_Template(__STORE.store_name, "Accepted"),
-      process.env.NO_REPLY_EMAIL
+      process.env.DATA_EMAIL //In From data@thegreenmall.net
     );
 
     await __SQL_TRANSACTION.commit();
@@ -2789,7 +2796,7 @@ const admin_rejectClaimRequest = async function (data) {
         __STORE.store_name +
         "'",
       cliamStore_Template(__STORE.store_name, "Rejected"),
-      process.env.NO_REPLY_EMAIL
+      process.env.DATA_EMAIL //In From data@thegreenmall.net
     );
 
     return { is_rejetcted: true };

@@ -452,7 +452,6 @@ const getTaxRate = async function (
         parseFloat(calculation.amount_total),
     };
   } catch (err) {
-    console.log("err=", err);
     return await getStoreTax(store_id);
   }
 };
@@ -677,7 +676,8 @@ const getStripePaymentService = async function () {
 const getUserCurrentBalance = async function (user_id) {
   try {
     const __USER = await User.findOne({ where: { id: user_id } });
-    return __USER.user_balance;
+
+    return isNaN(__USER.user_balance) ? 0 : __USER.user_balance;
   } catch (err) {
     throw err;
   }
@@ -688,7 +688,7 @@ const getStoreBalance = async function (store_id) {
     // logger.log("Store id ", store_id)
     // logger.log(store_id)
     const __STORE = await Store.findOne({ where: { id: store_id } });
-    return __STORE.store_balance;
+    return isNaN(__STORE.store_balance) ? 0 : __STORE.store_balance;
   } catch (err) {
     throw err;
   }
@@ -701,7 +701,7 @@ const updateStoreBalance = async function (
 ) {
   try {
     return await Store.update(
-      { store_balance },
+      { ...(isNaN(Number(store_balance)) ? {} : { store_balance }) },
       { where: { id: store_id }, transaction: __SQL_TRANSACTION }
     );
   } catch (err) {
