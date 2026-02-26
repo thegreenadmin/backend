@@ -337,7 +337,8 @@ const createStore = async function (data, user = null) {
 const getStoreDetails = async function (
   store_id,
   user_id = null,
-  is_admin_requested = null
+  is_admin_requested = null,
+  only_enabled_delivery_services = false
 ) {
   try {
     const favouriteStore = user_id
@@ -425,7 +426,20 @@ const getStoreDetails = async function (
         {
           model: StoreDeliveryService,
           required: false,
-          where: { status: "active" },
+          where: {
+            status: "active",
+            ...(only_enabled_delivery_services ? { is_enabled: true } : {}),
+          },
+          include: only_enabled_delivery_services
+            ? [
+                {
+                  model: DeliveryService,
+                  required: true,
+                  where: { status: "active", is_enabled: true },
+                  attributes: [],
+                },
+              ]
+            : [],
           attributes: [
             ["id", "store_delivery_service_id"],
             "delivery_service_id",
@@ -2200,7 +2214,7 @@ const shop_StoreDetails = async function (data, user_id = null) {
   // data = {store_id, longitude, latitude}
   try {
     const { store_id, longitude, latitude } = data;
-    const __STORE = await getStoreDetails(store_id, user_id);
+    const __STORE = await getStoreDetails(store_id, user_id, null, true);
     if (user_id && longitude && latitude) {
       const address = await USPSController.getAddressUsingLatLong(
         latitude,

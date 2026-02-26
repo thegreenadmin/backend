@@ -187,29 +187,44 @@ function extractComponentValue(result, componentType) {
 }
 
 const getGeoParametersByPostalCode = async function (postalCode) {
-  const apiKey = process.env.GOOGLE_MAPS_KEY;
+  try {
+    const apiKey = process.env.GOOGLE_MAPS_KEY;
+    const queryVariants = [
+      { address: `${postalCode}` },
+      { address: `${postalCode},US` },
+      { address: `${postalCode}`, components: "country:US" },
+    ];
 
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${postalCode}&key=${apiKey}`;
+    for (const query of queryVariants) {
+      const response = await axios.get(
+        "https://maps.googleapis.com/maps/api/geocode/json",
+        {
+          params: {
+            ...query,
+            key: apiKey,
+          },
+        }
+      );
 
-  const response = await axios.get(url);
-  const data = response.data;
+      const data = response.data;
+      if (data.status === "OK" && data.results?.length) {
+        const location = data.results[0].geometry.location;
+        return {
+          result: true,
+          latitude: location.lat || null,
+          longitude: location.lng || null,
+        };
+      }
+    }
 
-  if (data.status === "OK") {
-    const result = data.results;
-    const location = result[0].geometry.location;
-
-    const latitude = location.lat || null;
-    const longitude = location.lng || null;
-
-    return {
-      result: true,
-      latitude,
-      longitude,
-    };
-  } else {
     return {
       result: false,
       error: "Geolocation not found",
+    };
+  } catch (err) {
+    return {
+      result: false,
+      error: err.message,
     };
   }
 };
