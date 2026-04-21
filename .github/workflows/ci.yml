@@ -1,0 +1,143 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+        default: 'production'
+      skip_tests:
+        description: 'Skip build tests'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '20.x'
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: ['18.x', '20.x']
+      fail-fast: false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run syntax check
+      if: ${{ github.event.inputs.skip_tests != 'true' }}
+      run: node -c server.js
+
+    - name: Check for security vulnerabilities
+      if: ${{ github.event.inputs.skip_tests != 'true' }}
+      run: npm audit --audit-level=moderate
+      continue-on-error: true
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: node_modules-${{ matrix.node-version }}
+        path: node_modules
+        retention-days: 1
+
+  deploy:
+    name: Deploy to EC2
+    needs: build
+    runs-on: ubuntu-latest
+    # Deploy on push to main OR manual workflow_dispatch
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || github.event_name == 'workflow_dispatch'
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: ${{ secrets.DEPLOY_URL }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: node_modules-20.x
+        path: node_modules
+
+    - name: Configure SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to EC2
+      run: |
+        # Create deployment package
+        tar -czf deploy.tar.gz \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='node_modules/.cache' \
+          --exclude='*.log' \
+          .
+
+        # Copy to EC2
+        scp -i ~/.ssh/deploy_key deploy.tar.gz ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/
+
+        # Deploy on EC2
+        ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -e
+          cd ${{ secrets.EC2_DEPLOY_PATH }}
+          
+          # Backup current deployment
+          if [ -d "current" ]; then
+            tar -czf /tmp/backup-$(date +%Y%m%d-%H%M%S).tar.gz current || true
+          fi
+          
+          # Extract new deployment
+          mkdir -p current
+          tar -xzf /tmp/deploy.tar.gz -C current
+          
+          # Install dependencies
+          cd current
+          npm ci --production
+          
+          # Restart application
+          pm2 restart server.js || pm2 start server.js --name "backend"
+          
+          # Cleanup
+          rm /tmp/deploy.tar.gz
+          echo "Deployment completed successfully"
+        EOF
+
+    - name: Cleanup SSH key
+      if: always()
+      run: rm -f ~/.ssh/deploy_key
