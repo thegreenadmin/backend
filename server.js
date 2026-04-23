@@ -7,7 +7,6 @@ require("custom-env").env(true);
 require("./database/db.connect").connect().then();
 const CroneController = require("./controllers/crone.controller");
 const moment = require("moment");
-
 // const corsOptions = {
 //   //origin: '*', // Restrict to allowed origins in production
 //   origin: ['http://localhost:4200', 'https://cn3m3t9wyd.execute-api.us-east-1.amazonaws.com', 'https://rr56zdj710.execute-api.us-east-1.amazonaws.com'],
