@@ -81,6 +81,7 @@ const createUser = async function (data) {
           first_name,
           last_name,
           email,
+          is_store_owner,
           createdAt: moment().utc().toDate(),
         });
 
