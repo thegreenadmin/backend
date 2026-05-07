@@ -81,7 +81,6 @@ const createUser = async function (data) {
           first_name,
           last_name,
           email,
-          is_store_owner,
           createdAt: moment().utc().toDate(),
         });
 
@@ -332,6 +331,7 @@ const verifyOTP = async function (data) {
           {
             ...store_access_registeration_detail,
             has_store_access: true,
+            is_store_owner: true,
             store_access_registeration_detail: null,
           },
           {
@@ -353,6 +353,7 @@ const verifyOTP = async function (data) {
         );
 
         has_store_access = true;
+        is_store_owner = true;
       } else {
         // logger.log("kuch toh gadbad hai")
       }
