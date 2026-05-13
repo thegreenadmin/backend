@@ -606,6 +606,7 @@ const createUserStripeBankAccount = async function (data, user_id) {
         email: __USER.email,
         business_type: "individual",
         capabilities: {
+          card_payments: { requested: true },
           transfers: { requested: true },
         },
         metadata: {
@@ -799,6 +800,7 @@ const getUserStripeConnectedAccount = async function (user_id) {
         email: __USER.email,
         business_type: "individual",
         capabilities: {
+          card_payments: { requested: true },
           transfers: { requested: true },
         },
       });
