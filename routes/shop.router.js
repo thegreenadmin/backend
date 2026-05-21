@@ -62,10 +62,10 @@ router.get("/stores/list/favourite", userAuth, async function (req, res) {
   }
 });
 
-router.get("/store/details", hasUserAuth, async function (req, res) {
+router.get("/store/details", async function (req, res) {
   try {
-    const user_id = req?.payload?.user?.id;
-    const stores = await shop_StoreDetails(req.query, user_id);
+    const userId = req?.payload?.user?.id || null;
+    const stores = await shop_StoreDetails(req.query, userId);
     sendOkResponse(res, stores, "Store details successfully fetched");
   } catch (err) {
     sendConflictResponse(res, {}, err);
@@ -84,7 +84,7 @@ router.post("/store/claim/create", userAuth, async function (req, res) {
   }
 });
 
-router.get("/store/category/list", hasUserAuth, async function (req, res) {
+router.get("/store/category/list", async function (req, res) {
   try {
     const categories = await shop_listStoreCategories(req.query);
     sendOkResponse(res, categories, "Store categories successfully fetched");
@@ -93,11 +93,12 @@ router.get("/store/category/list", hasUserAuth, async function (req, res) {
   }
 });
 
-router.post("/store/product/list", hasUserAuth, async function (req, res) {
+router.post("/store/product/list", async function (req, res) {
   try {
+    const userId = req?.payload?.user?.id || null;
     const products = await shop_listStoreProducts(
       req.body,
-      req?.payload?.user?.id
+      userId
     );
     sendOkResponse(res, products, "Products successfully fetched");
   } catch (err) {
@@ -105,12 +106,13 @@ router.post("/store/product/list", hasUserAuth, async function (req, res) {
   }
 });
 
-router.get("/store/product/details", hasUserAuth, async function (req, res) {
+router.get("/store/product/details", async function (req, res) {
   try {
+    const userId = req?.payload?.user?.id || null;
     const product = await shop_getProductDetails(
       req.query,
       req.query.product_id,
-      req?.payload?.user?.id
+      userId
     );
     sendOkResponse(res, product, "Product details successfully fetched");
   } catch (err) {
@@ -118,7 +120,7 @@ router.get("/store/product/details", hasUserAuth, async function (req, res) {
   }
 });
 
-router.get("/offers/list", hasUserAuth, async function (req, res) {
+router.get("/offers/list", async function (req, res) {
   try {
     const offers = await shop_listAllStoresOffers(req.query);
     sendOkResponse(res, offers, "Offers successfully fetched");
@@ -127,7 +129,7 @@ router.get("/offers/list", hasUserAuth, async function (req, res) {
   }
 });
 
-router.get("/store/offers/list", hasUserAuth, async function (req, res) {
+router.get("/store/offers/list",  async function (req, res) {
   try {
     const offers = await shop_listStoreOffers(req.query.store_id);
     sendOkResponse(res, offers, "Offers successfully fetched");
@@ -145,7 +147,7 @@ router.get("/home/offers/list", hasUserAuth, async function (req, res) {
   }
 });
 
-router.get("/home/products/list", hasUserAuth, async function (req, res) {
+router.get("/home/products/list", async function (req, res) {
   try {
     const products = await shop_listAppHomeProducts(req.query);
     sendOkResponse(res, products, "Products successfully fetched");
