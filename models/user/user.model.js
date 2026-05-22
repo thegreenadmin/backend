@@ -20,9 +20,12 @@ const User = sequelize.define(
     },
     email: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       validate: {
-        is: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/,
+        is: {
+          args: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/,
+          msg: "Invalid email format",
+        },
       },
     },
     phone: {
