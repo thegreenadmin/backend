@@ -70,6 +70,7 @@ const createUser = async function (data) {
             is_account_deleted: false,
             user_balance: 0,
             is_store_owner,
+            is_age_verified,
           },
           { transaction: __SQL_TRANSACTION }
         );
