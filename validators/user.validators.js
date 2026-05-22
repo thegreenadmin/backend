@@ -26,6 +26,7 @@ const userCreateValidator = function (req, res, next) {
     dob: JOI_DOB.required(),
     has_store_access: JOI_BOOLEAN.required(),
     is_store_owner: JOI_BOOLEAN.required(),
+    is_age_verified: JOI_BOOLEAN.required(),
   });
 
   JOI_HANDLE_BODY_VALIDATION(schema, req, res, next);
