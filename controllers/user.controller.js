@@ -46,6 +46,7 @@ const createUser = async function (data) {
       dob,
       has_store_access,
       is_store_owner,
+      is_age_verified,
     } = data;
     const status = "active";
     let user = null;
@@ -108,6 +109,7 @@ const createUser = async function (data) {
           is_account_deleted: false,
           user_balance: 0,
           is_store_owner: false,
+          is_age_verified,
         },
         { transaction: __SQL_TRANSACTION }
       );
