@@ -56,6 +56,12 @@ const User = sequelize.define(
       type: DataTypes.DATE,
     },
 
+    is_age_verified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+
     has_store_access: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
