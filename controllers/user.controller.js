@@ -115,7 +115,7 @@ const createUser = async function (data) {
       );
     }
 
-    if (!has_store_access) {
+    if (!has_store_access && email) {
       await SnsController.sendEmail(
         email,
         "Welcome",
