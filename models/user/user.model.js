@@ -104,6 +104,15 @@ const User = sequelize.define(
           is_account_deleted: false,
         },
       },
+      {
+        unique: true,
+        fields: ["phone", "phone_code"],
+        where: {
+          status: "active",
+          email: null,
+          is_account_deleted: false,
+        },
+      },
     ],
   }
 );
