@@ -23,7 +23,7 @@ const userCreateValidator = function (req, res, next) {
     email: JOI_EMAIL.optional(),
     phone: JOI_STRING.required(),
     phone_code: JOI_STRING.required(),
-    dob: JOI_DOB.required(),
+    dob: JOI_DOB.optional(),
     has_store_access: JOI_BOOLEAN.required(),
     is_store_owner: JOI_BOOLEAN.required(),
     is_age_verified: JOI_BOOLEAN.required(),
