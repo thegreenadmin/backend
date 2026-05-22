@@ -97,19 +97,9 @@ const User = sequelize.define(
     indexes: [
       {
         unique: true,
-        fields: ["phone", "phone_code", fn("lower", col("email"))],
-        where: {
-          status: "active",
-          email: { [Op.ne]: null },
-          is_account_deleted: false,
-        },
-      },
-      {
-        unique: true,
         fields: ["phone", "phone_code"],
         where: {
           status: "active",
-          email: null,
           is_account_deleted: false,
         },
       },
