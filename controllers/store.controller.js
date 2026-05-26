@@ -2082,7 +2082,7 @@ const shop_getNearbyStores = async function (data, user_id) {
               // get all the store's timmings
               model: StoreTiming,
               // required: false, // Include all store timings
-              required: true,
+              required: false,
               attributes: [
                 ["id", "store_timing_id"],
                 "is_24_hours_active",
