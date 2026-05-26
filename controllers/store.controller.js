@@ -2081,8 +2081,7 @@ const shop_getNearbyStores = async function (data, user_id) {
             {
               // get all the store's timmings
               model: StoreTiming,
-              // required: false, // Include all store timings
-              required: false,
+              required: false, // Include all store timings
               attributes: [
                 ["id", "store_timing_id"],
                 "is_24_hours_active",
@@ -2102,12 +2101,16 @@ const shop_getNearbyStores = async function (data, user_id) {
               where: { is_store_owner: true, status: "active" },
               attributes: [["is_store_owner", "has_store_owner"]],
             },
-            {
-              model: FavouriteStore,
-              required: false,
-              where: { ...user, status: "active" },
-              attributes: [["id", "favourite_store_id"], "status"],
-            },
+            ...(user_id
+              ? [
+                  {
+                    model: FavouriteStore,
+                    required: false,
+                    where: { user_id, status: "active" },
+                    attributes: [["id", "favourite_store_id"], "status"],
+                  },
+                ]
+              : []),
             {
               model: StoreDeliveryService,
               required: delivery_services?.length ? true : false,
@@ -2262,6 +2265,11 @@ const shop_StoreDetails = async function (data, user_id = null) {
 const shop_PreviousStores = async function (data, user_id) {
   // data = {page, page_size}
   try {
+    // Block guest users from accessing previous stores
+    if (!user_id) {
+      throw "Authentication required to access previous stores";
+    }
+
     const { page, page_size } = data;
 
     const query = {
@@ -2385,6 +2393,11 @@ const shop_PreviousStores = async function (data, user_id) {
 const shop_FavouriteStores = async function (data, user_id) {
   // data = {page, page_size}
   try {
+    // Block guest users from accessing favorite stores
+    if (!user_id) {
+      throw "Authentication required to access favorite stores";
+    }
+
     const { page, page_size } = data;
     const query = {
       where: { user_id, status: "active" },
