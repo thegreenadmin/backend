@@ -540,7 +540,7 @@ const createOrder = async function (data, user_id) {
         SNSController.createAndSendCreateOrderEmails(
           __ORDER_DETAILS.order,
           storeEmails,
-          "Your have received a new order",
+          "You have received a new order",
           `
                 We are thrilled to inform you that a new order has been placed on your '${__STORE.store_name}'. Please review the order details below.
                 `
