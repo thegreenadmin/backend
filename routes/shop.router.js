@@ -34,7 +34,7 @@ const {
 } = require("../utils/response.util");
 const router = express.Router();
 
-router.post("/stores/list/nearby", async function (req, res) {
+router.post("/stores/list/nearby", hasUserAuth ,async function (req, res) {
   try {
     const userId = req?.payload?.user?.id || null;
     const stores = await shop_getNearbyStores(req.body, userId);
