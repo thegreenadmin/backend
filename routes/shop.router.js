@@ -45,7 +45,7 @@ router.post("/stores/list/nearby", async function (req, res) {
 });
 
 
-router.get("/stores/list/previous", async function (req, res) {
+router.get("/stores/list/previous", userAuth, async function (req, res) {
   try {
     const userId = req?.payload?.user?.id || null;
     const stores = await shop_PreviousStores(req.query, userId);
@@ -55,7 +55,7 @@ router.get("/stores/list/previous", async function (req, res) {
   }
 });
 
-router.get("/stores/list/favourite", async function (req, res) {
+router.get("/stores/list/favourite", userAuth, async function (req, res) {
   try {
     const userId = req?.payload?.user?.id || null;
     const stores = await shop_FavouriteStores(req.query, userId);
