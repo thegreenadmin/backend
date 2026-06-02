@@ -22,7 +22,10 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        is: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/,
+        is: {
+          args: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/,
+          msg: "Invalid email format",
+        },
       },
     },
     phone: {
@@ -54,6 +57,12 @@ const User = sequelize.define(
     },
     dob: {
       type: DataTypes.DATE,
+    },
+
+    is_age_verified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
 
     has_store_access: {

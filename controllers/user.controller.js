@@ -46,6 +46,7 @@ const createUser = async function (data) {
       dob,
       has_store_access,
       is_store_owner,
+      is_age_verified,
     } = data;
     const status = "active";
     let user = null;
@@ -69,6 +70,7 @@ const createUser = async function (data) {
             is_account_deleted: false,
             user_balance: 0,
             is_store_owner,
+            is_age_verified,
           },
           { transaction: __SQL_TRANSACTION }
         );
@@ -108,12 +110,13 @@ const createUser = async function (data) {
           is_account_deleted: false,
           user_balance: 0,
           is_store_owner: false,
+          is_age_verified,
         },
         { transaction: __SQL_TRANSACTION }
       );
     }
 
-    if (!has_store_access) {
+    if (!has_store_access && email) {
       await SnsController.sendEmail(
         email,
         "Welcome",
@@ -331,6 +334,7 @@ const verifyOTP = async function (data) {
           {
             ...store_access_registeration_detail,
             has_store_access: true,
+            is_store_owner: true,
             store_access_registeration_detail: null,
           },
           {
@@ -352,6 +356,7 @@ const verifyOTP = async function (data) {
         );
 
         has_store_access = true;
+        is_store_owner = true;
       } else {
         // logger.log("kuch toh gadbad hai")
       }
