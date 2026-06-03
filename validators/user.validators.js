@@ -20,7 +20,7 @@ const userCreateValidator = function (req, res, next) {
   const schema = Joi.object({
     first_name: JOI_FIRST_NAME.required(),
     last_name: JOI_LAST_NAME.required(),
-    email: JOI_EMAIL.required(),
+    email: JOI_EMAIL.allow("", null).optional(),
     phone: JOI_STRING.required(),
     phone_code: JOI_STRING.required(),
     dob: JOI_DOB.optional(),
