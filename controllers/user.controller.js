@@ -40,7 +40,6 @@ const createUser = async function (data) {
     const {
       first_name,
       last_name,
-      email,
       phone,
       phone_code,
       dob,
@@ -48,6 +47,9 @@ const createUser = async function (data) {
       is_store_owner,
       is_age_verified,
     } = data;
+    // Email is optional; normalize empty string to null so the model's
+    // format validator is skipped and the unique index excludes it.
+    const email = data.email && data.email.trim() !== "" ? data.email.trim() : null;
     const status = "active";
     let user = null;
 
@@ -70,7 +72,6 @@ const createUser = async function (data) {
             is_account_deleted: false,
             user_balance: 0,
             is_store_owner,
-            is_age_verified,
           },
           { transaction: __SQL_TRANSACTION }
         );
