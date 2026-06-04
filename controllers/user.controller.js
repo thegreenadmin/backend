@@ -515,12 +515,17 @@ const updateUserDetails = async function (data, user_id) {
 
   try {
     const { user, address } = data;
+    // Email is optional; normalize empty/whitespace to null so the model's
+    // format validator is skipped and the partial unique index excludes it.
+    const __email =
+      user.email && `${user.email}`.trim() !== "" ? user.email.trim() : null;
     // update the user
     const ___UPDATED_USER = await User.update(
       {
         first_name: user.first_name,
         last_name: user.last_name,
         nick_name: user.nick_name,
+        ...(user.email !== undefined ? { email: __email } : {}),
       },
       { where: { id: user_id, status: "active" } }
     );
