@@ -38,6 +38,13 @@ const sendPaymentError = function (res, err) {
 };
 
 
+
+
+
+
+
+
+
 router.post('/create', userCreateValidator, async function(req, res){
     // logger.log("Create user request")
     try{
@@ -52,7 +59,7 @@ router.post('/create', userCreateValidator, async function(req, res){
 router.post('/otp/generate', generateOTPValidator, async function(req, res){
     try{
         const otp = await generateOTP(req.body);
-        sendCreatedResponse(res, otp, OTP_SUCCESSFULLY_GENERATED)
+        sendCreatedResponse(res, otp, OTP_SUCCESSFULLY_SEND)
     }catch(err) {
         sendConflictResponse(res, {}, err);
     }
@@ -64,7 +71,7 @@ router.post('/otp/verify', verifyOTPValidator, async function(req, res){
     // logger.log("Otp verify request")
     try{
         const token = await verifyOTP(req.body);
-        sendCreatedResponse(res, {token: token}, OTP_SUCCESSFULLY_VERIFIED)
+        sendCreatedResponse(res, {token: token}, LOGIN_SUCCESSFULLY)
     }catch(err) {
         sendConflictResponse(res, {}, err);
     }
@@ -271,7 +278,6 @@ router.get('/wallet/transaction/details', userAuth, async function(req, res) {
 
 
 
-
 router.get('/wallet/balance', userAuth, async function(req, res) {
     try{
         const balance = await getUserCurrentBalance(req.payload.user.id);
@@ -347,7 +353,6 @@ router.post('/stripe/card/create', userAuth, async function(req, res) {
 
 
 
-
 router.get('/stripe/card/list', userAuth, async function(req, res) {
     try{
         const stripeCards = await listUserCards(req.payload.user.id);
@@ -359,6 +364,7 @@ router.get('/stripe/card/list', userAuth, async function(req, res) {
 
 
 
+
 router.delete('/stripe/card/delete', userAuth, async function(req, res) {
     try{
         const deleteCard = await deleteUserStripeCard(req.body, req.payload.user.id);
@@ -367,7 +373,6 @@ router.delete('/stripe/card/delete', userAuth, async function(req, res) {
         sendConflictResponse(res, {}, err);
     }
 })
-
 
 
 
@@ -384,6 +389,7 @@ router.post('/stripe/bank/create', userAuth, async function(req, res) {
 
 
 
+
 router.get('/stripe/bank/list', userAuth, async function(req, res) {
     try{
         const stripeCards = await listUserBankAccounts(req.payload.user.id);
@@ -394,6 +400,7 @@ router.get('/stripe/bank/list', userAuth, async function(req, res) {
 })
 
 
+
 router.delete('/stripe/bank/delete', userAuth, async function(req, res) {
     try{
         const deleteCard = await deleteUserBankAccount(req.body, req.payload.user.id);
@@ -402,6 +409,7 @@ router.delete('/stripe/bank/delete', userAuth, async function(req, res) {
         sendConflictResponse(res, {}, err);
     }
 })
+
 
 
 router.get('/stripe/connected/account/details', userAuth, async function(req, res) {
