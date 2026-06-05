@@ -13,16 +13,29 @@ const { createStripeUser, createUserStripeCard, userWalletRechargeWithCard, list
 const { listUserTransactionHistories, getUserTransaction, getUserWalletAutoChargeService, createUserWalletAutoChargeService, updateUserWalletAutoChargeService, deleteUserWalletAutoChargeService, createMembership, listUserMemberships, getUserMembershipDetails } = require("../controllers/transaction.controller");
 const { getUserCurrentBalance } = require("../controllers/common.controller");
 const { user_listStoreReports } = require("../controllers/report.controller");
+const { lookupRecipient, generateQrPayload, decodeQrPayload, createPayment, confirmPayment, cancelPayment, getPaymentStatus } = require("../controllers/payment.controller");
+const { recipientLookupValidator, qrGenerateValidator, qrDecodeValidator, createPaymentValidator, confirmPaymentValidator, paymentIntentIdBodyValidator, paymentStatusValidator } = require("../validators/payment.validator");
 
 
 const router = express.Router();
 
-
-
-
-
-
-
+/**
+ * Send a payment error to the client. Typed PaymentErrors carry a machine-readable
+ * `code` (+ optional data) so the app can react (e.g. KYC_REQUIRED -> license upload,
+ * QR_EXPIRED -> rescan). Everything else falls back to the standard conflict response.
+ */
+const sendPaymentError = function (res, err) {
+  if (err && err.isPaymentError) {
+    return res.status(409).send({
+      status: 409,
+      code: err.code,
+      message: err.message,
+      errors: [err.message],
+      data: err.data || {},
+    });
+  }
+  return sendConflictResponse(res, {}, err);
+};
 
 
 router.post('/create', userCreateValidator, async function(req, res){
@@ -36,13 +49,10 @@ router.post('/create', userCreateValidator, async function(req, res){
 });
 
 
-
-
 router.post('/otp/generate', generateOTPValidator, async function(req, res){
-    // logger.log("Otp generate request")
     try{
-        const userOtp = await generateOTP(req.body);
-        sendCreatedResponse(res, {}, OTP_SUCCESSFULLY_SEND)
+        const otp = await generateOTP(req.body);
+        sendCreatedResponse(res, otp, OTP_SUCCESSFULLY_GENERATED)
     }catch(err) {
         sendConflictResponse(res, {}, err);
     }
@@ -54,7 +64,7 @@ router.post('/otp/verify', verifyOTPValidator, async function(req, res){
     // logger.log("Otp verify request")
     try{
         const token = await verifyOTP(req.body);
-        sendOkResponse(res,token, LOGIN_SUCCESSFULLY)
+        sendCreatedResponse(res, {token: token}, OTP_SUCCESSFULLY_VERIFIED)
     }catch(err) {
         sendConflictResponse(res, {}, err);
     }
@@ -70,6 +80,7 @@ router.get('/logout', userAuth, async function(req, res) {
         sendConflictResponse(res, {}, err);
     }
 })
+
 
 
 
@@ -197,7 +208,7 @@ router.delete('/product/favourite/delete', userAuth, async function(req, res) {
 
 
 
-// wallet
+
 router.post('/stripe/customer/create', userAuth, async function(req, res) {
     try{
         const stripeUser = await createStripeUser(req.body, req.payload.user.id);
@@ -210,6 +221,7 @@ router.post('/stripe/customer/create', userAuth, async function(req, res) {
 
 
 
+
 router.post('/wallet/recharge/stripe', userAuth, async function(req, res) {
     try{
         const paymentIntent = await userWalletRechargeWithCard(req.body, req.payload.user.id);
@@ -218,6 +230,7 @@ router.post('/wallet/recharge/stripe', userAuth, async function(req, res) {
         sendConflictResponse(res, {}, err);
     }
 })
+
 
 
 
@@ -253,6 +266,7 @@ router.get('/wallet/transaction/details', userAuth, async function(req, res) {
         sendConflictResponse(res, {}, err);
     }
 })
+
 
 
 
@@ -320,6 +334,7 @@ router.delete('/wallet/autocharge/delete', userAuth, async function(req, res) {
 
 
 
+
 router.post('/stripe/card/create', userAuth, async function(req, res) {
     try{
         const stripeUser = await createUserStripeCard(req.body, req.payload.user.id);
@@ -332,11 +347,12 @@ router.post('/stripe/card/create', userAuth, async function(req, res) {
 
 
 
+
 router.get('/stripe/card/list', userAuth, async function(req, res) {
     try{
         const stripeCards = await listUserCards(req.payload.user.id);
         sendOkResponse(res, stripeCards, "Cards successfully fetched");
-    }catch(err){
+    }catch(err) {
         sendConflictResponse(res, {}, err);
     }
 })
@@ -347,12 +363,10 @@ router.delete('/stripe/card/delete', userAuth, async function(req, res) {
     try{
         const deleteCard = await deleteUserStripeCard(req.body, req.payload.user.id);
         sendOkResponse(res, deleteCard, "Card deleted successfully");
-    }catch(err){
+    }catch(err) {
         sendConflictResponse(res, {}, err);
     }
 })
-
-
 
 
 
@@ -374,11 +388,10 @@ router.get('/stripe/bank/list', userAuth, async function(req, res) {
     try{
         const stripeCards = await listUserBankAccounts(req.payload.user.id);
         sendOkResponse(res, stripeCards, "Bank list successfully fetched");
-    }catch(err){
+    }catch(err) {
         sendConflictResponse(res, {}, err);
     }
 })
-
 
 
 router.delete('/stripe/bank/delete', userAuth, async function(req, res) {
@@ -395,11 +408,10 @@ router.get('/stripe/connected/account/details', userAuth, async function(req, re
     try{
         const stripeConnectedAccount = await getUserStripeConnectedAccount(req.payload.user.id)
         sendOkResponse(res, stripeConnectedAccount, "Account details successfully fetched");
-    }catch(err) {
+    }catch(err){
         sendConflictResponse(res, {}, err);
     }
 })
-
 
 
 
@@ -469,6 +481,74 @@ router.get('/reports/store/transactions', userAuth, async function(req, res) {
 })
 
 
+
+
+// ---------------------------------------------------------------------------
+// P2P & P2B Barcode Payments
+// ---------------------------------------------------------------------------
+
+router.post('/payment/recipient/lookup', userAuth, recipientLookupValidator, async function(req, res) {
+    try{
+        const recipient = await lookupRecipient(req.body, req.payload.user.id);
+        sendOkResponse(res, recipient, "Recipient fetched successfully");
+    }catch(err) {
+        sendPaymentError(res, err);
+    }
+})
+
+router.post('/payment/qr/generate', userAuth, qrGenerateValidator, async function(req, res) {
+    try{
+        const qr = await generateQrPayload(req.body, req.payload.user.id);
+        sendOkResponse(res, qr, "Payment code generated successfully");
+    }catch(err) {
+        sendPaymentError(res, err);
+    }
+})
+
+router.post('/payment/qr/decode', userAuth, qrDecodeValidator, async function(req, res) {
+    try{
+        const decoded = await decodeQrPayload(req.body);
+        sendOkResponse(res, decoded, "Payment code decoded successfully");
+    }catch(err) {
+        sendPaymentError(res, err);
+    }
+})
+
+router.post('/payment/create', userAuth, createPaymentValidator, async function(req, res) {
+    try{
+        const intent = await createPayment(req.body, req.payload.user.id);
+        sendCreatedResponse(res, intent, "Payment created successfully");
+    }catch(err) {
+        sendPaymentError(res, err);
+    }
+})
+
+router.post('/payment/confirm', userAuth, confirmPaymentValidator, async function(req, res) {
+    try{
+        const result = await confirmPayment(req.body, req.payload.user.id);
+        sendOkResponse(res, result, "Payment completed successfully");
+    }catch(err) {
+        sendPaymentError(res, err);
+    }
+})
+
+router.post('/payment/cancel', userAuth, paymentIntentIdBodyValidator, async function(req, res) {
+    try{
+        const result = await cancelPayment(req.body, req.payload.user.id);
+        sendOkResponse(res, result, "Payment cancelled");
+    }catch(err) {
+        sendPaymentError(res, err);
+    }
+})
+
+router.get('/payment/status', userAuth, paymentStatusValidator, async function(req, res) {
+    try{
+        const result = await getPaymentStatus(req.query, req.payload.user.id);
+        sendOkResponse(res, result, "Payment status fetched successfully");
+    }catch(err) {
+        sendPaymentError(res, err);
+    }
+})
 
 
 module.exports = {userRouter: router}
