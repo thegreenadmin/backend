@@ -53,6 +53,7 @@ const Message = require("../models/message/message.model");
 const UserStripe = require("../models/user/user_stripe.model");
 const UserStripeCard = require("../models/user/user_stripe_card.model");
 const UserWalletTransactions = require("../models/transaction/user_wallet_transaction.model");
+const PaymentIntent = require("../models/transaction/payment_intent.model");
 const StoreStripeAccount = require("../models/store/store_stripe_account.model");
 const StoreStripeBankAccount = require("../models/store/store_stripe_bank_account.model");
 const StoreServiceCharge = require("../models/store/store_service_charge.model");
@@ -168,6 +169,16 @@ const syncTables = async function () {
 
     //transaction
     await Transaction.sync({ force: false });
+    // sync({force:false}) does not alter existing Postgres enums, so add the
+    // P2P/P2B transaction_type values idempotently for already-created DBs.
+    const sequelize = global["sequelize"];
+    for (const value of ["p2p_send", "p2p_receive", "p2b_payment"]) {
+      await sequelize
+        .query(
+          `ALTER TYPE "enum_transactions_transaction_type" ADD VALUE IF NOT EXISTS '${value}'`
+        )
+        .catch((err) => console.log("enum add value skipped:", value, err.message));
+    }
     await TransactionHistory.sync({ force: false });
     await OrderTransaction.sync({ force: false });
     await OrderItemRefundTransaction.sync({ force: false });
@@ -178,6 +189,7 @@ const syncTables = async function () {
     await UserWalletTransactions.sync({ force: false });
     await StorePayout.sync({ force: false });
     await StoreWalletTransaction.sync({ force: false });
+    await PaymentIntent.sync({ force: false });
 
     // messages
     await MessageHead.sync({ force: false });
