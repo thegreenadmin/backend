@@ -413,7 +413,7 @@
     "fee_type": "flat",
     "biometric_threshold": 100.0,
     "kyc_required_proof_type": "Driving License",
-    "kyc_threshold": 0,
+    "kyc_threshold": 1000000,
     "qr_validity_seconds": 300,
     "daily_send_limit": 5000.0,
     "velocity_max_txn_per_min": 3,
