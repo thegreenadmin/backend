@@ -71,7 +71,7 @@ router.post('/otp/verify', verifyOTPValidator, async function(req, res){
     // logger.log("Otp verify request")
     try{
         const token = await verifyOTP(req.body);
-        sendCreatedResponse(res, {token: token}, LOGIN_SUCCESSFULLY)
+        sendCreatedResponse(res, token, LOGIN_SUCCESSFULLY)
     }catch(err) {
         sendConflictResponse(res, {}, err);
     }
@@ -353,6 +353,7 @@ router.post('/stripe/card/create', userAuth, async function(req, res) {
 
 
 
+
 router.get('/stripe/card/list', userAuth, async function(req, res) {
     try{
         const stripeCards = await listUserCards(req.payload.user.id);
@@ -377,6 +378,7 @@ router.delete('/stripe/card/delete', userAuth, async function(req, res) {
 
 
 
+
 router.post('/stripe/bank/create', userAuth, async function(req, res) {
     try{
         const stripeUser = await createUserStripeBankAccount(req.body, req.payload.user.id);
@@ -385,7 +387,6 @@ router.post('/stripe/bank/create', userAuth, async function(req, res) {
         sendConflictResponse(res, {}, err);
     }
 })
-
 
 
 
@@ -409,8 +410,6 @@ router.delete('/stripe/bank/delete', userAuth, async function(req, res) {
         sendConflictResponse(res, {}, err);
     }
 })
-
-
 
 router.get('/stripe/connected/account/details', userAuth, async function(req, res) {
     try{
