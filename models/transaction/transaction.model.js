@@ -33,7 +33,7 @@ const Transaction = sequelize.define('transaction', {
     transaction_type: {
         type: DataTypes.ENUM,
         allowNull: false,
-        values: ['credit', 'refund', 'order', 'order cancel', 'item cancel', 'payout', 'payout refund', 'membership']
+        values: ['credit', 'refund', 'order', 'order cancel', 'item cancel', 'payout', 'payout refund', 'membership', 'p2p_send', 'p2p_receive', 'p2b_payment']
     },
 
     transaction_amount: {
