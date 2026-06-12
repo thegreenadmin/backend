@@ -1,5 +1,6 @@
 const express = require("express");
 const { hasUserAuth, userAuth } = require("../controllers/auth.controller");
+const { resolveCallerCountry } = require("../controllers/feature.controller");
 const {
   createCartItem,
   listStoreCartItems,
@@ -34,37 +35,86 @@ const {
 } = require("../utils/response.util");
 const router = express.Router();
 
-router.post("/stores/list/nearby", hasUserAuth, async function (req, res) {
+/**
+ * @swagger
+ * /api/v1/shop/stores/list/nearby:
+ *   post:
+ *     summary: Get nearby stores
+ *     description: Fetches stores near the user's location based on latitude and longitude (Public API - No authentication required)
+ *     tags: [Shop]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - latitude
+ *               - longitude
+ *             properties:
+ *               latitude:
+ *                 type: number
+ *                 format: float
+ *               longitude:
+ *                 type: number
+ *                 format: float
+ *               radius:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Nearby stores successfully fetched
+ */
+router.post("/stores/list/nearby", resolveCallerCountry, async function (req, res) {
   try {
-    const stores = await shop_getNearbyStores(req.body, req?.payload?.user?.id);
+    const userId = req?.payload?.user?.id || null;
+    const stores = await shop_getNearbyStores(req.body, userId, req.callerCountry);
     sendOkResponse(res, stores, "Nearby stores successfully fetched");
   } catch (err) {
     sendConflictResponse(res, {}, err);
   }
 });
 
-router.get("/stores/list/previous", userAuth, async function (req, res) {
+router.get("/stores/list/previous", async function (req, res) {
   try {
-    const stores = await shop_PreviousStores(req.query, req.payload.user.id);
+    const userId = req?.payload?.user?.id || null;
+    const stores = await shop_PreviousStores(req.query, userId);
     sendOkResponse(res, stores, "Previous stores successfully fetched");
   } catch (err) {
     sendConflictResponse(res, {}, err);
   }
 });
 
-router.get("/stores/list/favourite", userAuth, async function (req, res) {
+router.get("/stores/list/favourite", async function (req, res) {
   try {
-    const stores = await shop_FavouriteStores(req.query, req.payload.user.id);
+    const userId = req?.payload?.user?.id || null;
+    const stores = await shop_FavouriteStores(req.query, userId);
     sendOkResponse(res, stores, "Favourite stores successfully fetched");
   } catch (err) {
     sendConflictResponse(res, {}, err);
   }
 });
 
-router.get("/store/details", hasUserAuth, async function (req, res) {
+/**
+ * @swagger
+ * /api/v1/shop/store/details:
+ *   get:
+ *     summary: Get store details
+ *     description: Get detailed information about a specific store (Public API - No authentication required)
+ *     tags: [Shop]
+ *     parameters:
+ *       - in: query
+ *         name: store_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Store details successfully fetched
+ */
+router.get("/store/details", async function (req, res) {
   try {
-    const user_id = req?.payload?.user?.id;
-    const stores = await shop_StoreDetails(req.query, user_id);
+    const userId = req?.payload?.user?.id || null;
+    const stores = await shop_StoreDetails(req.query, userId);
     sendOkResponse(res, stores, "Store details successfully fetched");
   } catch (err) {
     sendConflictResponse(res, {}, err);
@@ -83,7 +133,7 @@ router.post("/store/claim/create", userAuth, async function (req, res) {
   }
 });
 
-router.get("/store/category/list", hasUserAuth, async function (req, res) {
+router.get("/store/category/list", async function (req, res) {
   try {
     const categories = await shop_listStoreCategories(req.query);
     sendOkResponse(res, categories, "Store categories successfully fetched");
@@ -92,11 +142,12 @@ router.get("/store/category/list", hasUserAuth, async function (req, res) {
   }
 });
 
-router.post("/store/product/list", hasUserAuth, async function (req, res) {
+router.post("/store/product/list", async function (req, res) {
   try {
+    const userId = req?.payload?.user?.id || null;
     const products = await shop_listStoreProducts(
       req.body,
-      req?.payload?.user?.id
+      userId
     );
     sendOkResponse(res, products, "Products successfully fetched");
   } catch (err) {
@@ -104,12 +155,13 @@ router.post("/store/product/list", hasUserAuth, async function (req, res) {
   }
 });
 
-router.get("/store/product/details", hasUserAuth, async function (req, res) {
+router.get("/store/product/details", async function (req, res) {
   try {
+    const userId = req?.payload?.user?.id || null;
     const product = await shop_getProductDetails(
       req.query,
       req.query.product_id,
-      req?.payload?.user?.id
+      userId
     );
     sendOkResponse(res, product, "Product details successfully fetched");
   } catch (err) {
@@ -117,7 +169,7 @@ router.get("/store/product/details", hasUserAuth, async function (req, res) {
   }
 });
 
-router.get("/offers/list", hasUserAuth, async function (req, res) {
+router.get("/offers/list", async function (req, res) {
   try {
     const offers = await shop_listAllStoresOffers(req.query);
     sendOkResponse(res, offers, "Offers successfully fetched");
@@ -126,7 +178,7 @@ router.get("/offers/list", hasUserAuth, async function (req, res) {
   }
 });
 
-router.get("/store/offers/list", hasUserAuth, async function (req, res) {
+router.get("/store/offers/list", async function (req, res) {
   try {
     const offers = await shop_listStoreOffers(req.query.store_id);
     sendOkResponse(res, offers, "Offers successfully fetched");
@@ -135,7 +187,7 @@ router.get("/store/offers/list", hasUserAuth, async function (req, res) {
   }
 });
 
-router.get("/home/offers/list", hasUserAuth, async function (req, res) {
+router.get("/home/offers/list", async function (req, res) {
   try {
     const offers = await shop_listHomeOffers(req.query);
     sendOkResponse(res, offers, "Offers successfully fetched");
@@ -144,7 +196,7 @@ router.get("/home/offers/list", hasUserAuth, async function (req, res) {
   }
 });
 
-router.get("/home/products/list", hasUserAuth, async function (req, res) {
+router.get("/home/products/list", async function (req, res) {
   try {
     const products = await shop_listAppHomeProducts(req.query);
     sendOkResponse(res, products, "Products successfully fetched");
@@ -153,6 +205,19 @@ router.get("/home/products/list", hasUserAuth, async function (req, res) {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/shop/cart/active:
+ *   get:
+ *     summary: Get active cart
+ *     description: Get user's active shopping cart
+ *     tags: [Shop]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Active cart successfully fetched
+ */
 router.get("/cart/active", hasUserAuth, async function (req, res) {
   try {
     const user_id = req?.payload?.user?.id;

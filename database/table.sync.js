@@ -13,6 +13,8 @@ const UserProof = require("./../models/user/user_proof.model");
 const UserSession = require("./../models/user/user_sessions.model");
 const Country = require("./../models/state/country.model");
 const State = require("./../models/state/state.model");
+const CountryFeature = require("./../models/state/country_feature.model");
+const CountryHerbsLicense = require("./../models/state/country_herbs_license.model");
 const UserAddress = require("./../models/user/user_address.model");
 const StoreAddress = require("./../models/store/store_address.model");
 const Category = require("./../models/catalogue/category.model");
@@ -91,6 +93,7 @@ const syncTables = async function () {
     //utils
     await Country.sync({ force: false });
     await State.sync({ force: false });
+    await CountryFeature.sync({ force: false });
 
     //page
     await Page.sync({ force: false });
@@ -115,9 +118,28 @@ const syncTables = async function () {
     await UserSession.sync({ force: false });
     await UserProof.sync({ force: false });
     await UserAddress.sync({ force: false });
+    // depends on users + countries, so synced after both
+    await CountryHerbsLicense.sync({ force: false });
 
     //store
     await Store.sync({ force: false });
+    // sync({force:false}) does not add columns to existing tables, so create
+    // the store_type enum + column idempotently for already-created DBs.
+    {
+      const sequelize = global["sequelize"];
+      await sequelize
+        .query(
+          `DO $$ BEGIN
+             CREATE TYPE "enum_stores_store_type" AS ENUM ('general', 'munchies', 'herbs');
+           EXCEPTION WHEN duplicate_object THEN null; END $$;`
+        )
+        .catch((err) => console.log("store_type enum skipped:", err.message));
+      await sequelize
+        .query(
+          `ALTER TABLE "stores" ADD COLUMN IF NOT EXISTS "store_type" "enum_stores_store_type" NOT NULL DEFAULT 'general'`
+        )
+        .catch((err) => console.log("store_type column skipped:", err.message));
+    }
     await StoreServiceCharge.sync({ force: false });
     await StoreTiming.sync({ force: false });
     await StoreAddress.sync({ force: false });

@@ -15,6 +15,11 @@ const { getUserCurrentBalance } = require("../controllers/common.controller");
 const { user_listStoreReports } = require("../controllers/report.controller");
 const { lookupRecipient, generateQrPayload, decodeQrPayload, createPayment, confirmPayment, cancelPayment, getPaymentStatus } = require("../controllers/payment.controller");
 const { recipientLookupValidator, qrGenerateValidator, qrDecodeValidator, createPaymentValidator, confirmPaymentValidator, paymentIntentIdBodyValidator, paymentStatusValidator } = require("../validators/payment.validator");
+const { resolveCallerCountry, featureGate } = require("../controllers/feature.controller");
+
+// P2P/P2B payments are gated per country; the UI hides the entry point but
+// the API is the enforcement layer (and the emergency kill switch).
+const paymentsGate = [resolveCallerCountry, featureGate("payments")];
 
 
 const router = express.Router();
@@ -45,6 +50,36 @@ const sendPaymentError = function (res, err) {
 
 
 
+/**
+ * @swagger
+ * /api/v1/user/create:
+ *   post:
+ *     summary: Create a new user
+ *     description: Creates a new user account with phone number and other details
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 description: User phone number
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               name:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User successfully created
+ *       409:
+ *         description: User already exists
+ */
 router.post('/create', userCreateValidator, async function(req, res){
     // logger.log("Create user request")
     try{
@@ -55,7 +90,28 @@ router.post('/create', userCreateValidator, async function(req, res){
     }
 });
 
-
+/**
+ * @swagger
+ * /api/v1/user/otp/generate:
+ *   post:
+ *     summary: Generate OTP for login
+ *     description: Generate one-time password for user login
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *             properties:
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: OTP successfully generated
+ */
 router.post('/otp/generate', generateOTPValidator, async function(req, res){
     try{
         const otp = await generateOTP(req.body);
@@ -90,7 +146,19 @@ router.get('/logout', userAuth, async function(req, res) {
 
 
 
-
+/**
+ * @swagger
+ * /api/v1/user/details:
+ *   get:
+ *     summary: Get user details
+ *     description: Get authenticated user's profile details
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User detail successfully fetched
+ */
 router.get('/details', userAuth, async function(req, res) {
     try{
         const user = req.payload.user;
@@ -215,7 +283,30 @@ router.delete('/product/favourite/delete', userAuth, async function(req, res) {
 
 
 
-
+// wallet
+/**
+ * @swagger
+ * /api/v1/user/stripe/customer/create:
+ *   post:
+ *     summary: Create Stripe customer account
+ *     description: Creates a Stripe customer account for the user
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user_address_id:
+ *                 type: integer
+ *                 description: User address ID
+ *     responses:
+ *       201:
+ *         description: Stripe customer successfully created
+ */
 router.post('/stripe/customer/create', userAuth, async function(req, res) {
     try{
         const stripeUser = await createStripeUser(req.body, req.payload.user.id);
@@ -228,7 +319,33 @@ router.post('/stripe/customer/create', userAuth, async function(req, res) {
 
 
 
-
+/**
+ * @swagger
+ * /api/v1/user/wallet/recharge/stripe:
+ *   post:
+ *     summary: Recharge wallet with card
+ *     description: Recharge user wallet using saved Stripe card
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_stripe_card_id
+ *               - amount
+ *             properties:
+ *               user_stripe_card_id:
+ *                 type: integer
+ *               amount:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Balance added to wallet successfully
+ */
 router.post('/wallet/recharge/stripe', userAuth, async function(req, res) {
     try{
         const paymentIntent = await userWalletRechargeWithCard(req.body, req.payload.user.id);
@@ -240,7 +357,34 @@ router.post('/wallet/recharge/stripe', userAuth, async function(req, res) {
 
 
 
-
+/**
+ * @swagger
+ * /api/v1/user/wallet/recharge/paymentMethod:
+ *   post:
+ *     summary: Recharge wallet with Apple Pay/Google Pay
+ *     description: Recharge user wallet using Apple Pay or Google Pay
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - payment_service_name
+ *               - amount
+ *             properties:
+ *               payment_service_name:
+ *                 type: string
+ *                 enum: [apple_pay, google_pay]
+ *               amount:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Payment intent created successfully
+ */
 router.post('/wallet/recharge/paymentMethod', userAuth, async function(req, res) {
     try{
         const paymentIntent = await createUserWalletRechargeWithApplePayOrGooglePay(req.body, req.payload.user.id);
@@ -278,6 +422,19 @@ router.get('/wallet/transaction/details', userAuth, async function(req, res) {
 
 
 
+/**
+ * @swagger
+ * /api/v1/user/wallet/balance:
+ *   get:
+ *     summary: Get wallet balance
+ *     description: Get current wallet balance for the authenticated user
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Balance successfully fetched
+ */
 router.get('/wallet/balance', userAuth, async function(req, res) {
     try{
         const balance = await getUserCurrentBalance(req.payload.user.id);
@@ -340,7 +497,31 @@ router.delete('/wallet/autocharge/delete', userAuth, async function(req, res) {
 
 
 
-
+/**
+ * @swagger
+ * /api/v1/user/stripe/card/create:
+ *   post:
+ *     summary: Add payment card
+ *     description: Add a payment card to the user's Stripe account
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token_id
+ *             properties:
+ *               token_id:
+ *                 type: string
+ *                 description: Stripe token from frontend
+ *     responses:
+ *       201:
+ *         description: Card added successfully
+ */
 router.post('/stripe/card/create', userAuth, async function(req, res) {
     try{
         const stripeUser = await createUserStripeCard(req.body, req.payload.user.id);
@@ -353,7 +534,19 @@ router.post('/stripe/card/create', userAuth, async function(req, res) {
 
 
 
-
+/**
+ * @swagger
+ * /api/v1/user/stripe/card/list:
+ *   get:
+ *     summary: List payment cards
+ *     description: Get all saved payment cards for the user
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cards successfully fetched
+ */
 router.get('/stripe/card/list', userAuth, async function(req, res) {
     try{
         const stripeCards = await listUserCards(req.payload.user.id);
@@ -365,7 +558,30 @@ router.get('/stripe/card/list', userAuth, async function(req, res) {
 
 
 
-
+/**
+ * @swagger
+ * /api/v1/user/stripe/card/delete:
+ *   delete:
+ *     summary: Remove payment card
+ *     description: Remove a payment card from the user's Stripe account
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_stripe_card_id
+ *             properties:
+ *               user_stripe_card_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Card deleted successfully
+ */
 router.delete('/stripe/card/delete', userAuth, async function(req, res) {
     try{
         const deleteCard = await deleteUserStripeCard(req.body, req.payload.user.id);
@@ -378,7 +594,31 @@ router.delete('/stripe/card/delete', userAuth, async function(req, res) {
 
 
 
-
+/**
+ * @swagger
+ * /api/v1/user/stripe/bank/create:
+ *   post:
+ *     summary: Add bank account
+ *     description: Add a bank account for payouts to the user's Stripe connected account
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token_id
+ *             properties:
+ *               token_id:
+ *                 type: string
+ *                 description: Stripe bank account token
+ *     responses:
+ *       201:
+ *         description: Bank account successfully added
+ */
 router.post('/stripe/bank/create', userAuth, async function(req, res) {
     try{
         const stripeUser = await createUserStripeBankAccount(req.body, req.payload.user.id);
@@ -391,6 +631,19 @@ router.post('/stripe/bank/create', userAuth, async function(req, res) {
 
 
 
+/**
+ * @swagger
+ * /api/v1/user/stripe/bank/list:
+ *   get:
+ *     summary: List bank accounts
+ *     description: Get all bank accounts for the user's Stripe connected account
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Bank accounts successfully fetched
+ */
 router.get('/stripe/bank/list', userAuth, async function(req, res) {
     try{
         const stripeCards = await listUserBankAccounts(req.payload.user.id);
@@ -401,7 +654,30 @@ router.get('/stripe/bank/list', userAuth, async function(req, res) {
 })
 
 
-
+/**
+ * @swagger
+ * /api/v1/user/stripe/bank/delete:
+ *   delete:
+ *     summary: Remove bank account
+ *     description: Remove a bank account from the user's Stripe connected account
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_stripe_bank_id
+ *             properties:
+ *               user_stripe_bank_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Bank account successfully removed
+ */
 router.delete('/stripe/bank/delete', userAuth, async function(req, res) {
     try{
         const deleteCard = await deleteUserBankAccount(req.body, req.payload.user.id);
@@ -411,6 +687,20 @@ router.delete('/stripe/bank/delete', userAuth, async function(req, res) {
     }
 })
 
+
+/**
+ * @swagger
+ * /api/v1/user/stripe/connected/account/details:
+ *   get:
+ *     summary: Get connected account details
+ *     description: Get Stripe connected account details and onboarding link
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account details successfully fetched
+ */
 router.get('/stripe/connected/account/details', userAuth, async function(req, res) {
     try{
         const stripeConnectedAccount = await getUserStripeConnectedAccount(req.payload.user.id)
@@ -421,7 +711,35 @@ router.get('/stripe/connected/account/details', userAuth, async function(req, re
 })
 
 
-
+/**
+ * @swagger
+ * /api/v1/user/stripe/document/upload:
+ *   post:
+ *     summary: Upload verification document
+ *     description: Upload verification documents for Stripe account verification
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - file
+ *               - file_type
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *               file_type:
+ *                 type: string
+ *                 description: Document type (e.g., identity_document)
+ *     responses:
+ *       200:
+ *         description: File successfully uploaded
+ */
 router.post('/stripe/document/upload', userAuth, upload.single('file'), async function(req, res) {
     try{
         const file = await stripeDocumentUpload(req.file, req.body.file_type);
@@ -494,7 +812,7 @@ router.get('/reports/store/transactions', userAuth, async function(req, res) {
 // P2P & P2B Barcode Payments
 // ---------------------------------------------------------------------------
 
-router.post('/payment/recipient/lookup', userAuth, recipientLookupValidator, async function(req, res) {
+router.post('/payment/recipient/lookup', userAuth, ...paymentsGate, recipientLookupValidator, async function(req, res) {
     try{
         const recipient = await lookupRecipient(req.body, req.payload.user.id);
         sendOkResponse(res, recipient, "Recipient fetched successfully");
@@ -503,7 +821,7 @@ router.post('/payment/recipient/lookup', userAuth, recipientLookupValidator, asy
     }
 })
 
-router.post('/payment/qr/generate', userAuth, qrGenerateValidator, async function(req, res) {
+router.post('/payment/qr/generate', userAuth, ...paymentsGate, qrGenerateValidator, async function(req, res) {
     try{
         const qr = await generateQrPayload(req.body, req.payload.user.id);
         sendOkResponse(res, qr, "Payment code generated successfully");
@@ -512,7 +830,7 @@ router.post('/payment/qr/generate', userAuth, qrGenerateValidator, async functio
     }
 })
 
-router.post('/payment/qr/decode', userAuth, qrDecodeValidator, async function(req, res) {
+router.post('/payment/qr/decode', userAuth, ...paymentsGate, qrDecodeValidator, async function(req, res) {
     try{
         const decoded = await decodeQrPayload(req.body);
         sendOkResponse(res, decoded, "Payment code decoded successfully");
@@ -521,7 +839,7 @@ router.post('/payment/qr/decode', userAuth, qrDecodeValidator, async function(re
     }
 })
 
-router.post('/payment/create', userAuth, createPaymentValidator, async function(req, res) {
+router.post('/payment/create', userAuth, ...paymentsGate, createPaymentValidator, async function(req, res) {
     try{
         const intent = await createPayment(req.body, req.payload.user.id);
         sendCreatedResponse(res, intent, "Payment created successfully");
@@ -530,7 +848,7 @@ router.post('/payment/create', userAuth, createPaymentValidator, async function(
     }
 })
 
-router.post('/payment/confirm', userAuth, confirmPaymentValidator, async function(req, res) {
+router.post('/payment/confirm', userAuth, ...paymentsGate, confirmPaymentValidator, async function(req, res) {
     try{
         const result = await confirmPayment(req.body, req.payload.user.id);
         sendOkResponse(res, result, "Payment completed successfully");

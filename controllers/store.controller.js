@@ -19,6 +19,7 @@ const StoreUserRole = require("../models/store/store_user_role.model");
 const Module = require("../models/module/module.model");
 const Controller = require("../models/module/controller.model");
 const IrsController = require("./irs.controller");
+const FeatureController = require("./feature.controller");
 const StoreAddress = require("../models/store/store_address.model");
 const S3Controller = require("./s3.controller");
 const State = require("../models/state/state.model");
@@ -128,6 +129,40 @@ const listStorePages = async function (store_id) {
  * @implements {store}
  * @description create store and store_owner
  *  */
+// Store-type gating: munchies/herbs must be enabled in the store's own
+// country, and herbs stores may only be owned by that country's licensed
+// provider. Admin-side calls (no user) skip the license check.
+const assertStoreTypeAllowed = async function (store_type, countryName, user) {
+  if (!store_type || store_type === "general") {
+    return;
+  }
+  if (!["munchies", "herbs"].includes(store_type)) {
+    throw "Invalid store type";
+  }
+  const __COUNTRY = await Country.findOne({
+    where: { country_name: { [Op.iLike]: countryName }, status: "active" },
+  });
+  if (!__COUNTRY) {
+    throw "Country not found";
+  }
+  const enabled = await FeatureController.isFeatureEnabled(
+    __COUNTRY.id,
+    store_type
+  );
+  if (!enabled) {
+    throw `${store_type} stores are not available in ${__COUNTRY.country_name}`;
+  }
+  if (store_type === "herbs" && user) {
+    const licensed = await FeatureController.isHerbsLicensee(
+      user.id,
+      __COUNTRY.id
+    );
+    if (!licensed) {
+      throw "Only the licensed herbs provider for this country can own herbs stores";
+    }
+  }
+};
+
 const createStore = async function (data, user = null) {
   // data = {store, store_address, store_timings, is_24_hours_active, store_delivery_services, store_pages}
 
@@ -165,9 +200,13 @@ const createStore = async function (data, user = null) {
       tax_value = __TAX.tax.tax_value;
     }
 
+    const store_type = store.store_type || "general";
+    await assertStoreTypeAllowed(store_type, store_address.country, user);
+
     const verifyStore = await IrsController.verifyStoreEin(store);
     const __STORE = await Store.create(
       {
+        store_type,
         store_name: store.store_name,
         store_ein: store.store_ein,
         image_url: store.image_url,
@@ -375,6 +414,7 @@ const getStoreDetails = async function (
         "store_phone",
         "is_verified",
         "is_enabled",
+        "store_type",
         "dynamic_link",
         "tax_value",
       ],
@@ -509,7 +549,7 @@ const getStoreDetails = async function (
  * @implements {store}
  * @description edit store details
  *  */
-const editStoreDetails = async function (data) {
+const editStoreDetails = async function (data, user = null) {
   const __SQL_TRANSACTION = await sequelize.transaction();
   // data = {store_id, store, store_address, store_timings, is_24_hours_active, store_delivery_services, store_pages}
 
@@ -580,8 +620,16 @@ const editStoreDetails = async function (data) {
       tax_value = __TAX.tax.tax_value;
     }
 
+    // re-validate whenever the type changes (or the address moves country
+    // while the store is a gated type)
+    const store_type = store.store_type || __STORE.store_type;
+    if (store_type !== "general") {
+      await assertStoreTypeAllowed(store_type, store_address.country, user);
+    }
+
     const __UPDATE_STORE = await Store.update(
       {
+        store_type,
         store_name,
         store_ein,
         image_url,
@@ -775,7 +823,7 @@ const getUserStores = async function (user_id) {
   });
 
   const __STORES = await Store.findAll({
-    attributes: ["id", "store_name", "store_ein", "image_url", "logo_url"],
+    attributes: ["id", "store_name", "store_ein", "image_url", "logo_url", "store_type"],
     where: {
       id: { [Op.in]: __STORE_USERS.map((user) => user.store_id) },
       status: "active",
@@ -1835,7 +1883,7 @@ const showUnClaimStores = async function (data) {
  */
 
 // By Saurav Pandey
-const shop_getNearbyStores = async function (data, user_id) {
+const shop_getNearbyStores = async function (data, user_id, callerCountry = null) {
   try {
     let {
       q,
@@ -1853,7 +1901,25 @@ const shop_getNearbyStores = async function (data, user_id) {
       state,
       country,
       place_id,
+      store_type,
     } = data;
+
+    // Country gating: disabled verticals are excluded server-side, the
+    // client only decides what to *request*, never what it may see.
+    const callerFeatures = await FeatureController.getCountryFeatures(
+      callerCountry ? callerCountry.id : null
+    );
+    const excludedStoreTypes = ["munchies", "herbs"].filter(
+      (t) => callerFeatures[t] !== true
+    );
+    if (store_type && excludedStoreTypes.includes(store_type)) {
+      throw "This category is not available in your country";
+    }
+    const storeTypeWhere = store_type
+      ? { store_type }
+      : excludedStoreTypes.length
+      ? { store_type: { [Op.notIn]: excludedStoreTypes } }
+      : {};
 
     const postelCodeFromFrontend = postal_code;
 
@@ -2048,6 +2114,7 @@ const shop_getNearbyStores = async function (data, user_id) {
           required: true,
           where: {
             ...storeNameFilter,
+            ...storeTypeWhere,
             status: "active",
             is_enabled: true,
           },
@@ -2055,6 +2122,7 @@ const shop_getNearbyStores = async function (data, user_id) {
             ["id", "store_id"],
             "logo_url",
             "store_name",
+            "store_type",
             "is_verified",
             "is_enabled",
             "image_url",

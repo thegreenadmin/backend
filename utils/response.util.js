@@ -74,6 +74,11 @@ const sendUnauthorizedResponse = function(res, data, err) {
     res.status(401).send({status: 401, ...getSimplifiedErrors(data, err)});
 }
 
+const sendForbiddenResponse = function(res, data, err) {
+    const req = res.req;
+    res.status(403).send({status: 403, ...getSimplifiedErrors(data, err)});
+}
+
 const sendBadRequestResponse = function(res, data, err) {
     const req = res.req;
     //logger.log("--------------------------API-------------------------------")
@@ -89,5 +94,6 @@ const sendBadRequestResponse = function(res, data, err) {
 module.exports = {
     sendOkResponse, sendCreatedResponse, sendConflictResponse,
     sendUnauthorizedResponse, sendBadRequestResponse, sendNoContentResponse,
-    
+    sendForbiddenResponse,
+
 }

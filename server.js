@@ -7,19 +7,27 @@ require("custom-env").env(true);
 require("./database/db.connect").connect().then();
 const CroneController = require("./controllers/crone.controller");
 const moment = require("moment");
+const swaggerUi = require('swagger-ui-express');
+const specs = require('./swagger');
 // const corsOptions = {
 //   //origin: '*', // Restrict to allowed origins in production
 //   origin: ['http://localhost:4200', 'https://cn3m3t9wyd.execute-api.us-east-1.amazonaws.com', 'https://rr56zdj710.execute-api.us-east-1.amazonaws.com'],
 //   optionsSuccessStatus: 200 // For legacy browser support
 // }
 let app = express();
+// Behind a proxy/load balancer req.ip must come from X-Forwarded-For; the
+// country resolver (feature gating) depends on it.
+app.set("trust proxy", true);
 // Allow all origins (Not recommended for production)
 app.use(cors());
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Device-Country"
+  );
   req.request_time = moment().utc().toDate();
   next();
 });
@@ -32,6 +40,13 @@ app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "views", "dist", "adminlte")));
 
 require("./routes/_index")(app);
+
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "TheGreenMall API Documentation"
+}));
 
 // Catch-all route to handle Angular routing
 app.get("*", (req, res) => {

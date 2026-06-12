@@ -25,6 +25,13 @@ const {
 } = require("../controllers/admin.controller");
 const { adminAuth } = require("../controllers/auth.controller");
 const {
+  admin_listCountryFeatures,
+  admin_updateCountryFeature,
+  admin_assignHerbsLicensee,
+  admin_revokeHerbsLicensee,
+  admin_updateStoreType,
+} = require("../controllers/feature.controller");
+const {
   admin_listCategories,
   getCategoryDetails,
   createCategory,
@@ -104,6 +111,43 @@ const {
   admin_listFinancialReports,
 } = require("../controllers/report.controller");
 
+/**
+ * @swagger
+ * /api/v1/admin/create:
+ *   post:
+ *     summary: Create a new admin user
+ *     description: Creates a new admin account with email, password, and name. Requires admin authentication.
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - name
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Admin email address
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 description: Admin password
+ *               name:
+ *                 type: string
+ *                 description: Admin full name
+ *     responses:
+ *       201:
+ *         description: Admin successfully created
+ *       409:
+ *         description: Conflict - Admin already exists or validation error
+ */
 router.post("/create", adminAuth, async function (req, res) {
   const { email, password, name } = req.body;
   try {
@@ -116,6 +160,42 @@ router.post("/create", adminAuth, async function (req, res) {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/admin/login:
+ *   post:
+ *     summary: Admin login
+ *     description: Authenticates an admin user and returns a JWT token
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       201:
+ *         description: Login successful, returns JWT token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post("/login", async function (req, res) {
   const { email, password } = req.body;
   try {
@@ -206,17 +286,52 @@ router.put("/password/change", adminAuth, async function (req, res) {
 });
 
 //dashboard
+/**
+ * @swagger
+ * /api/v1/admin/dashboard/details:
+ *   get:
+ *     summary: Get admin dashboard
+ *     description: Get platform-wide dashboard statistics and metrics
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard details successfully fetched
+ */
 router.get("/dashboard/details", adminAuth, async function (req, res) {
   try {
-    const dashboard = await getDashsboardDetails();
+    const dashboard = await getAdminDashboard();
     sendOkResponse(res, dashboard, "Dashboard details successfully fetched");
-  } catch (err) {
-    sendConflictResponse(res, {}, err);
+  } catch (e) {
+    sendConflictResponse(res, {}, e);
   }
 });
 
 // users
 
+/**
+ * @swagger
+ * /api/v1/admin/users/list:
+ *   get:
+ *     summary: List all users
+ *     description: Get list of all platform users with pagination and filters
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Users list fetched successfully
+ */
 router.get("/users/list", adminAuth, async function (req, res) {
   try {
     const users = await admin_listUsers(req.query);
@@ -226,15 +341,58 @@ router.get("/users/list", adminAuth, async function (req, res) {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/admin/user/details:
+ *   get:
+ *     summary: Get user details
+ *     description: Get detailed information about a specific user
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: user_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: User details successfully fetched
+ */
 router.get("/user/details", adminAuth, async function (req, res) {
   try {
-    const user = await admin_userDetails(req.query);
-    sendOkResponse(res, user, "User details fetch successfully");
+    const user = await admin_getUserDetails(req.query.user_id);
+    sendOkResponse(res, user, "User details successfully fetched");
   } catch (err) {
     sendConflictResponse(res, {}, err);
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/admin/user/block/create:
+ *   post:
+ *     summary: Block user
+ *     description: Block a user from the platform
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: User successfully blocked
+ */
 router.post("/user/block/create", adminAuth, async function (req, res) {
   try {
     const store = await admin_blockUser(req.body);
@@ -244,10 +402,34 @@ router.post("/user/block/create", adminAuth, async function (req, res) {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/admin/user/block/delete:
+ *   delete:
+ *     summary: Unblock user
+ *     description: Unblock a user from the platform
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: User successfully unblocked
+ */
 router.delete("/user/block/delete", adminAuth, async function (req, res) {
   try {
-    const store = await admin_removeBlockUser(req.body);
-    sendCreatedResponse(res, store, "User successfully unblocked");
+    const store = await admin_unblockUser(req.body);
+    sendOkResponse(res, store, "User successfully unblocked");
   } catch (err) {
     sendConflictResponse(res, {}, err);
   }
@@ -296,10 +478,32 @@ router.post("/store/create", adminAuth, async function (req, res) {
   }
 });
 
+/**
+ * @swagger
+ * /api/v1/admin/store/list:
+ *   get:
+ *     summary: List all stores
+ *     description: Get list of all platform stores with pagination and filters
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Stores list fetched successfully
+ */
 router.get("/store/list", adminAuth, async function (req, res) {
   try {
     const stores = await admin_listStores(req.query);
-    sendOkResponse(res, stores, "Stores list successfully fetched");
+    sendOkResponse(res, stores, "Stores list fetched successfully");
   } catch (err) {
     sendConflictResponse(res, {}, err);
   }
@@ -896,6 +1100,55 @@ router.put("/roles/update", adminAuth, async function (req, res) {
   try {
     const data = await updateRolePermissions(req.body);
     sendOkResponse(res, data, "Default role details successfully updated.");
+  } catch (err) {
+    sendConflictResponse(res, {}, err);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Country feature gating (munchies / herbs / payments per country)
+// ---------------------------------------------------------------------------
+
+router.get("/country/features", adminAuth, async function (req, res) {
+  try {
+    const countries = await admin_listCountryFeatures();
+    sendOkResponse(res, countries, "Country features successfully fetched.");
+  } catch (err) {
+    sendConflictResponse(res, {}, err);
+  }
+});
+
+router.put("/country/feature/update", adminAuth, async function (req, res) {
+  try {
+    const feature = await admin_updateCountryFeature(req.body);
+    sendOkResponse(res, feature, "Country feature successfully updated.");
+  } catch (err) {
+    sendConflictResponse(res, {}, err);
+  }
+});
+
+router.post("/country/herbs/license/assign", adminAuth, async function (req, res) {
+  try {
+    const license = await admin_assignHerbsLicensee(req.body);
+    sendOkResponse(res, license, "Herbs licensee successfully assigned.");
+  } catch (err) {
+    sendConflictResponse(res, {}, err);
+  }
+});
+
+router.delete("/country/herbs/license/revoke", adminAuth, async function (req, res) {
+  try {
+    const result = await admin_revokeHerbsLicensee(req.body);
+    sendOkResponse(res, result, "Herbs licensee successfully revoked.");
+  } catch (err) {
+    sendConflictResponse(res, {}, err);
+  }
+});
+
+router.put("/store/type/update", adminAuth, async function (req, res) {
+  try {
+    const store = await admin_updateStoreType(req.body);
+    sendOkResponse(res, store, "Store type successfully updated.");
   } catch (err) {
     sendConflictResponse(res, {}, err);
   }

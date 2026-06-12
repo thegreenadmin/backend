@@ -87,6 +87,15 @@ const Store = sequelize.define('stores', {
         allowNull: false
     },
 
+    // Business vertical of the store. 'herbs' stores may only be owned by the
+    // licensed herbs provider of the store's country (country_herbs_licenses).
+    store_type: {
+        type: DataTypes.ENUM,
+        allowNull: false,
+        values: ['general', 'munchies', 'herbs'],
+        defaultValue: 'general'
+    },
+
     
     status: {
         type: DataTypes.ENUM,

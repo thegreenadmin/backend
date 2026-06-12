@@ -37,6 +37,34 @@ router.get('/delivery/service/list', async function (req, res) {
 
 
 
+/**
+ * @swagger
+ * /api/v1/store/create:
+ *   post:
+ *     summary: Create a new store
+ *     description: Creates a new store for a user with store details
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Store successfully created
+ */
 router.post('/create', userAuth, async function (req, res) {
     try{
         const user = req.payload.user;
@@ -51,6 +79,25 @@ router.post('/create', userAuth, async function (req, res) {
 
 
 
+/**
+ * @swagger
+ * /api/v1/store/details:
+ *   get:
+ *     summary: Get store details
+ *     description: Get details of a specific store
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: store_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Store details successfully fetched
+ */
 router.get('/details', userAuth, async function(req, res) {
     try{
         const store_id = req.query.store_id;
@@ -66,7 +113,7 @@ router.get('/details', userAuth, async function(req, res) {
 
 router.put('/details/edit', userAuth, permissionAuth(["EDIT_STORE"]), async function(req, res) {
     try{
-        const editStore = await editStoreDetails(req.body);
+        const editStore = await editStoreDetails(req.body, req.payload.user);
         sendOkResponse(res, editStore, "Store details updated successfully");
     }catch(err) {
         sendConflictResponse(res, {}, err);
@@ -100,6 +147,19 @@ router.delete('/delete', userAuth, permissionAuth(["DELETE_STORE"]), async funct
 
 
 
+/**
+ * @swagger
+ * /api/v1/store/list:
+ *   get:
+ *     summary: List user stores
+ *     description: Get all stores associated with the authenticated user
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Stores successfully fetched
+ */
 router.get('/list', userAuth, async function (req, res) {
     try{
         const user = req.payload.user;
@@ -370,16 +430,43 @@ router.get('/quantity_type/list', async function(req, res) {
 
 
 
+/**
+ * @swagger
+ * /api/v1/store/category/create:
+ *   post:
+ *     summary: Create category
+ *     description: Create a new product category for the store
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - store_id
+ *               - name
+ *             properties:
+ *               store_id:
+ *                 type: integer
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Category successfully created
+ */
 router.post('/category/create', userAuth, permissionAuth(["CREATE_CATEGORY"]), async function(req, res) {
     try{
-        const category = await createCategory(req.body);
-        sendCreatedResponse(res, category, "Category created successfully");
-    }
-    catch(err) {
+        const category = await createStoreCategory(req.body, req.payload.user.id);
+        sendCreatedResponse(res, category, "Category successfully created")
+    }catch(err) {
         sendConflictResponse(res, {}, err);
     }
 })
-
 
 
 router.get('/category/list', userAuth, async function(req, res) {
@@ -452,10 +539,47 @@ router.delete('/category/delete', userAuth, permissionAuth(["EDIT_CATEGORY"]), a
 
 
 
+/**
+ * @swagger
+ * /api/v1/store/product/create:
+ *   post:
+ *     summary: Create product
+ *     description: Create a new product for the store
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - store_id
+ *               - category_id
+ *               - name
+ *               - price
+ *             properties:
+ *               store_id:
+ *                 type: integer
+ *               category_id:
+ *                 type: integer
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               quantity:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Product successfully created
+ */
 router.post('/product/create', userAuth, permissionAuth(["CREATE_PRODUCT"]), async function(req, res) {
     try{
-        const product = await createProduct(req.body);
-        sendCreatedResponse(res, product, "Product created successfully");
+        const product = await createStoreProduct(req.body, req.payload.user.id);
+        sendCreatedResponse(res, product, "Product successfully created")
     }catch(err) {
         sendConflictResponse(res, {}, err);
     }
@@ -623,6 +747,45 @@ router.post('/order/list', userAuth, async function(req, res) {
     try{
         const orders = await listStoreOrders(req.body, req.payload.user.id);
         sendOkResponse(res, orders, "Order list successfully fetched");
+    }catch(err) {
+        sendConflictResponse(res, {}, err);
+    }
+});
+
+/**
+ * @swagger
+ * /api/v1/store/order/list:
+ *   post:
+ *     summary: List store orders
+ *     description: Get list of orders for a store with filters
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - store_id
+ *             properties:
+ *               store_id:
+ *                 type: integer
+ *               page:
+ *                 type: integer
+ *               limit:
+ *                 type: integer
+ *               status:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Orders successfully fetched
+ */
+router.post('/order/list', userAuth, async function(req, res) {
+    try{
+        const orders = await storeOrderList(req.body, req.payload.user.id);
+        sendOkResponse(res, orders, "Orders successfully fetched")
     }catch(err) {
         sendConflictResponse(res, {}, err);
     }
@@ -866,6 +1029,36 @@ router.post('/message/send', userAuth, permissionAuth(["MANAGE_MESSAGE"]), async
 // stripe
 // stripe
 
+/**
+ * @swagger
+ * /api/v1/store/stripe/recharge:
+ *   post:
+ *     summary: Recharge store wallet
+ *     description: Recharge store wallet using user's saved card
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_stripe_card_id
+ *               - amount
+ *               - store_id
+ *             properties:
+ *               user_stripe_card_id:
+ *                 type: integer
+ *               amount:
+ *                 type: number
+ *               store_id:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Store recharged successfully
+ */
 router.post('/stripe/recharge', userAuth, permissionAuth(['MANAGE_TRANSACTION']), async function(req, res) {
     try{
         const payout = await storeWalletRechargeWithCard(req.body, req.payload.user.id);
@@ -876,6 +1069,36 @@ router.post('/stripe/recharge', userAuth, permissionAuth(['MANAGE_TRANSACTION'])
 })
 
 
+/**
+ * @swagger
+ * /api/v1/store/stripe/payout/create:
+ *   post:
+ *     summary: Create payout to bank account
+ *     description: Create a payout from store wallet to user's bank account
+ *     tags: [Store]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - store_id
+ *               - amount
+ *               - user_stripe_bank_id
+ *             properties:
+ *               store_id:
+ *                 type: integer
+ *               amount:
+ *                 type: number
+ *               user_stripe_bank_id:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Payout created successfully
+ */
 router.post('/stripe/payout/create', userAuth, permissionAuth(['MANAGE_TRANSACTION']), async function(req, res) {
     try{
         const payout = await createStripePayout(req.body, req.payload.user.id);

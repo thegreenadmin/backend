@@ -265,6 +265,46 @@ const createDefaultRoles = async function () {
   }
 };
 
+// Every country gets every feature enabled by default, so introducing the
+// gating system changes nothing until an admin switches a feature off.
+const createDefaultCountryFeatures = async function () {
+  try {
+    const CountryFeature = require("../models/state/country_feature.model");
+    const countries = await Country.findAll({
+      where: { status: "active" },
+      attributes: ["id"],
+      raw: true,
+    });
+    const existing = await CountryFeature.findAll({
+      attributes: ["country_id", "feature_key"],
+      raw: true,
+    });
+    const existingSet = new Set(
+      existing.map((f) => `${f.country_id}:${f.feature_key}`)
+    );
+
+    const rows = [];
+    for (const country of countries) {
+      for (const feature_key of ["munchies", "herbs", "payments"]) {
+        if (!existingSet.has(`${country.id}:${feature_key}`)) {
+          rows.push({
+            country_id: country.id,
+            feature_key,
+            is_enabled: true,
+            status: "active",
+          });
+        }
+      }
+    }
+    if (rows.length) {
+      await CountryFeature.bulkCreate(rows);
+    }
+  } catch (err) {
+    logger.err("createDefaultCountryFeatures failed: ", err);
+    throw err;
+  }
+};
+
 const createDefaultAdmin = async function () {
   try {
     const admin = await Admin.create({
@@ -282,6 +322,7 @@ async function createData() {
   await createModuleAndControllers();
   await createOrderStatuses();
   await createStatesAndCountries();
+  await createDefaultCountryFeatures();
   await createDemoProofs();
   await createQuantities();
   await createDeliveryServices();
