@@ -7,8 +7,6 @@ require("custom-env").env(true);
 require("./database/db.connect").connect().then();
 const CroneController = require("./controllers/crone.controller");
 const moment = require("moment");
-const swaggerUi = require('swagger-ui-express');
-const specs = require('./swagger');
 // const corsOptions = {
 //   //origin: '*', // Restrict to allowed origins in production
 //   origin: ['http://localhost:4200', 'https://cn3m3t9wyd.execute-api.us-east-1.amazonaws.com', 'https://rr56zdj710.execute-api.us-east-1.amazonaws.com'],
@@ -40,13 +38,6 @@ app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "views", "dist", "adminlte")));
 
 require("./routes/_index")(app);
-
-// Swagger API Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
-  explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: "TheGreenMall API Documentation"
-}));
 
 // Catch-all route to handle Angular routing
 app.get("*", (req, res) => {

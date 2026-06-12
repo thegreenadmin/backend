@@ -50,7 +50,6 @@
     "sequelize-cli": "^6.6.0",
     "serverless-http": "^3.2.0",
     "stripe": "^11.16.0",
-    "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.2",
     "tz-lookup": "^6.1.25",
     "xlsx": "^0.18.5",
