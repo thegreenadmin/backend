@@ -1112,7 +1112,9 @@ router.put("/roles/update", adminAuth, async function (req, res) {
 router.get("/country/features", adminAuth, async function (req, res) {
   try {
     const countries = await admin_listCountryFeatures();
-    sendOkResponse(res, countries, "Country features successfully fetched.");
+    // data must be an object: the admin panel's interceptor spreads data
+    // into {...data}, which mangles bare arrays into numeric-keyed objects
+    sendOkResponse(res, { countries }, "Country features successfully fetched.");
   } catch (err) {
     sendConflictResponse(res, {}, err);
   }
